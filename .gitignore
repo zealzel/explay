@@ -1,0 +1,7 @@
+*.xlsx
+*.zip
+inbox/
+archives/
+examples/
+.mypy_cache/
+*.txt
