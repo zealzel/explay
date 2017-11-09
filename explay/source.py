@@ -22,11 +22,11 @@ from pandas import DataFrame
 import pandas as pd
 import pdb
 
-from core.utils import is_buildin, replace_str
-from core.openpyxl_ext import insert_rows
+from explay.utils import is_buildin, replace_str
+from explay.openpyxl_ext import insert_rows
 
-from core.agg_func import agg_functions
-from core.post_func import common_funcs
+from explay.agg_func import agg_functions
+from explay.post_func import common_funcs
 
 #  pd.describe_option('display')
 
@@ -153,7 +153,10 @@ class Extension():
                         each_output = replace_str(template_string, spans, values)
 
                         if self.output_type:
-                            cast = {'int': int, 'float': float, 'list': json.loads}
+                            #  cast = {'int': int, 'float': float, 'list': json.loads}
+                            cast = {'int': compose(int, float), 'float': float, 'list': json.loads}
+                            if self.output_type== 'list':
+                                each_output = each_output.replace("'", '"')
                             each_output = cast[self.output_type](each_output)
 
                 else:
@@ -211,15 +214,31 @@ class xlProcessor():
 
 class xlConverter():
     def __init__(self, params):
-        self.first_row, self.idx_colname = params['first_row'], params['idx_colname']
+        self.params = dict([(e['name'], {k:v for k,v in e.items() if k!='name'}) for e in params])
+        #  self.first_row, self.idx_colname = params['first_row'], params['idx_colname']
 
-    def load_excel(self, filepath, sheet_name=0, resetindex=True):
-        col_indexes, col_names = list(zip(*list(self.idx_colname.items())))        
+    def _load_excel(self, filepath, sheet_name, first_row, idx_colname, resetindex=True):
+        col_indexes, col_names = list(zip(*list(idx_colname.items())))        
         parse_cols = [c-1 for c in col_indexes]
         df = pd.read_excel(filepath, sheet_name=sheet_name,
-                skiprows=self.first_row-1, header=None, usecols=parse_cols, names=col_names)
+                skiprows=first_row-1, header=None, usecols=parse_cols, names=col_names)
         df = df.reset_index(drop=True) if resetindex else df
         return df
+
+    def load_excel(self, converter_name, filepath, sheet_name=0, resetindex=True):
+        if type(converter_name)==list:
+            output = []
+            for each in converter_name:
+                first_row = self.params[each]['first_row']
+                idx_colname = self.params[each]['idx_colname']
+                df = self._load_excel(filepath, sheet_name, first_row, idx_colname, resetindex)
+                output.append(df)
+        else:
+            first_row = self.params[converter_name]['first_row']
+            idx_colname = self.params[converter_name]['idx_colname']
+            df = self._load_excel(filepath, sheet_name, first_row, idx_colname, resetindex)
+            output = df
+        return output
 
 
 class xlMerger(xlConverter):
@@ -227,7 +246,15 @@ class xlMerger(xlConverter):
         xlConverter.__init__(self, params)
         self.source_path = source_path
 
-    def merge_all(self, sheet_name=0, filename_excludes=None):
+    def merge_files(self, converter_name, filepaths, sheet_name=0):
+        df_all = []
+        for filepath in filepaths:
+            df_all.append(self.load_excel(converter_name, filepath, sheet_name))
+        df = pd.concat(df_all, axis=0)
+        df.index = range(len(df))
+        return df
+
+    def merge_all(self, converter_name, sheet_name=0, filename_excludes=None):
         files = glob.glob('{}/*xlsx*'.format(self.source_path))
         file_names = [os.path.basename(f) for f in files]
         if filename_excludes:
@@ -238,7 +265,7 @@ class xlMerger(xlConverter):
         df_all = []
         for f in file_names:
             file_path = os.path.join(self.source_path, f)
-            df_all.append(self.load_excel(file_path))
+            df_all.append(self.load_excel(converter_name, file_path, sheet_name))
         df = pd.concat(df_all, axis=0)
         df.index = range(len(df))
         return df, file_names
@@ -249,13 +276,14 @@ class xlParserNew():
         self.df = df
         self.jobs = jobs
 
-    def parse(self):
+    def parse(self, job_name=None):
         outputs = defaultdict(list)
-        for t, operations in self.jobs.items():
+        for jobname, operations in self.jobs.items():
+            if jobname != job_name: continue
             df = self.df
             for i, each_op in enumerate(operations):
                 df = each_op.parse(df)
-                outputs[t].append(df)
+                outputs[jobname].append(df)
         self.outputs = outputs
 
     def show_process(self, jobs):
@@ -393,7 +421,7 @@ class XlManager(object):
         self.process = xlProcessor(yml_file=yml_path)
         self.yml, self.home = yml_path, home
         self.df = None
-        self.renderer = xlRenderer(self.process.renderer)
+        #  self.renderer = xlRenderer(self.process.renderer)
         self.register_func()
         
     def register_func(self):
@@ -409,12 +437,26 @@ class XlManager(object):
     def dummy(self):
         print(self.yml, self.home)
 
-    def merge_all(self, sheet_name=0, filename_excludes=None, save_raw_excel=False):
+    def load_excel(self, converter_name, filepath, sheet_name=0):
+        cv = xlConverter(self.process.converter)
+        df = cv.load_excel(converter_name, filepath, sheet_name)
+        return df
+
+    def merge_files(self, converter_name, filepaths, sheet_name=0):
+
+        source_path = os.path.join(self.home, 'source')
+        self.merger = xlMerger(self.process.converter, source_path)
+
+        df = self.merger.merge_files(converter_name, filepaths, sheet_name)
+        self.df = df
+        return self
+
+    def merge_all(self, converter_name, sheet_name=0, filename_excludes=None, save_raw_excel=False):
         print(sheet_name, filename_excludes, save_raw_excel)
 
         source_path = os.path.join(self.home, 'source')
         self.merger = xlMerger(self.process.converter, source_path)
-        df_source, files = self.merger.merge_all(sheet_name, filename_excludes)
+        df_source, files = self.merger.merge_all(converter_name, sheet_name, filename_excludes)
         print('files merged: %s' % ','.join(files))
         if save_raw_excel:
             xlRenderer.to_excel(df_source, 'output/merged.xlsx')
@@ -432,10 +474,11 @@ class XlManager(object):
     def __str__(self):
         return str(self.df)
 
-    def parse(self, job_name):
+    def parse(self, job_name=None):
         if self.df is not None:
+            #  xp = xlParserNew(self.df, self.process.jobs)
             xp = xlParserNew(self.df, self.process.jobs)
-            xp.parse()
+            xp.parse(job_name)
             job_output = xp.outputs[job_name]
             df_result = job_output[-1]
             self.df = df_result
