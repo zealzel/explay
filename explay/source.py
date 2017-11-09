@@ -215,15 +215,27 @@ class xlProcessor():
 class xlConverter():
     def __init__(self, params):
         self.params = dict([(e['name'], {k:v for k,v in e.items() if k!='name'}) for e in params])
-        #  self.first_row, self.idx_colname = params['first_row'], params['idx_colname']
 
     def _load_excel(self, filepath, sheet_name, first_row, idx_colname, resetindex=True):
         col_indexes, col_names = list(zip(*list(idx_colname.items())))        
+
+        # handle column data type
+        types = []
+        col_names = list(col_names)
+        for i, c in enumerate(col_names):
+            name_type = c.split('=')
+            if len(name_type) > 1: # has type definition
+                types.append(name_type[-1].strip())
+                col_names[i] = name_type[0].strip()
+            else:
+                types.append(None)
+
         parse_cols = [c-1 for c in col_indexes]
         df = pd.read_excel(filepath, sheet_name=sheet_name,
                 skiprows=first_row-1, header=None, usecols=parse_cols, names=col_names)
         df = df.reset_index(drop=True) if resetindex else df
-        return df
+
+        return df, types
 
     def load_excel(self, converter_name, filepath, sheet_name=0, resetindex=True):
         if type(converter_name)==list:
@@ -231,13 +243,22 @@ class xlConverter():
             for each in converter_name:
                 first_row = self.params[each]['first_row']
                 idx_colname = self.params[each]['idx_colname']
-                df = self._load_excel(filepath, sheet_name, first_row, idx_colname, resetindex)
+                df, types = self._load_excel(filepath, sheet_name, first_row, idx_colname, resetindex)
                 output.append(df)
         else:
             first_row = self.params[converter_name]['first_row']
             idx_colname = self.params[converter_name]['idx_colname']
-            df = self._load_excel(filepath, sheet_name, first_row, idx_colname, resetindex)
+            df, types = self._load_excel(filepath, sheet_name, first_row, idx_colname, resetindex)
             output = df
+
+        if 'dropna' in self.params[converter_name]:
+            df.dropna(subset=[self.params[converter_name]['dropna']], inplace=True)
+
+        for col, col_type in zip(df.columns, types):
+            if col_type:
+                cast = {'int': compose(int, float), 'float': float}
+                df[col] = df[col].apply(cast[col_type])
+
         return output
 
 
@@ -253,6 +274,14 @@ class xlMerger(xlConverter):
         df = pd.concat(df_all, axis=0)
         df.index = range(len(df))
         return df
+
+    def merge_sheets(self, converter_name, filepath, sheet_names):
+        df_list = []
+        for sheet_name in sheet_names:
+            df_each = self.load_excel(converter_name, filepath, sheet_name)
+            df_list.append(df_each)
+        df_merged = pd.concat(df_list)
+        return df_merged
 
     def merge_all(self, converter_name, sheet_name=0, filename_excludes=None):
         files = glob.glob('{}/*xlsx*'.format(self.source_path))
@@ -442,11 +471,16 @@ class XlManager(object):
         df = cv.load_excel(converter_name, filepath, sheet_name)
         return df
 
-    def merge_files(self, converter_name, filepaths, sheet_name=0):
-
+    def merge_sheets(self, converter_name, filepath, sheet_names):
         source_path = os.path.join(self.home, 'source')
         self.merger = xlMerger(self.process.converter, source_path)
+        df = self.merger.merge_sheets(converter_name, filepath, sheet_names)
+        self.df = df
+        return df
 
+    def merge_files(self, converter_name, filepaths, sheet_name=0):
+        source_path = os.path.join(self.home, 'source')
+        self.merger = xlMerger(self.process.converter, source_path)
         df = self.merger.merge_files(converter_name, filepaths, sheet_name)
         self.df = df
         return self
