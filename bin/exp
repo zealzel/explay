@@ -1,7 +1,7 @@
 #!/Users/zealzel/.virtualenvs/kitty/bin/python3.6
 # -*- coding: utf8 -*-
 import fire
-from core.source import XlManager
+from explay.source import XlManager
 
 
 if __name__ == "__main__":
