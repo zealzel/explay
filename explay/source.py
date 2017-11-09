@@ -300,7 +300,7 @@ class xlMerger(xlConverter):
         return df, file_names
 
 
-class xlParserNew():
+class xlParser():
     def __init__(self, df, jobs):
         self.df = df
         self.jobs = jobs
@@ -319,37 +319,6 @@ class xlParserNew():
         for i, o in enumerate(jobs, 1):
             print('\n\noperation %d' % i)
             print(o.head())
-
-
-class xlParser():
-    def __init__(self, filepath, xl_template=None):
-        self.template = xl_template
-        self.filepath = filepath
-        self.load_excel()
-        self.parse()
-
-    def parse(self):
-        outputs = defaultdict(list)
-        for t, operations in self.template.outputs.items():
-            df = self.df
-            for i, each_op in enumerate(operations):
-                df = each_op.parse(df)
-                outputs[t].append(df)
-        self.outputs = outputs
-
-    def show_process(self, outputs):
-        for i, o in enumerate(outputs, 1):
-            print('\n\noperation %d' % i)
-            print(o.head())
-
-    def load_excel(self, sheet_name=0, resetindex=True):
-        col_indexes, title_names = list(zip(*list(self.template.title_dict.items())))        
-        parse_cols = [c-1 for c in col_indexes]
-        df = pd.read_excel(self.filepath, sheet_name=sheet_name,
-                skiprows=self.template.first_row-1,
-                header=None, usecols=parse_cols, names=title_names)
-        df_final = df.reset_index(drop=True) if resetindex else df
-        self.df = df_final
 
 
 class xlRenderer():
@@ -510,8 +479,7 @@ class XlManager(object):
 
     def parse(self, job_name=None):
         if self.df is not None:
-            #  xp = xlParserNew(self.df, self.process.jobs)
-            xp = xlParserNew(self.df, self.process.jobs)
+            xp = xlParser(self.df, self.process.jobs)
             xp.parse(job_name)
             job_output = xp.outputs[job_name]
             df_result = job_output[-1]
