@@ -86,7 +86,7 @@ class GroupBy():
         group_by = self.by
         agg_dict = self.agg
         D = df.groupby(group_by, sort=False)
-         
+
         dataframes = []
         for name, values in agg_dict.items():
             col, func = values
@@ -156,11 +156,18 @@ class Extension():
                             values.append(value)
                         each_output = replace_str(template_string, spans, values)
 
+                        cast_datetime = rpartial(datetime.datetime.strptime, '%Y-%m-%d %H:%M:%S')
+
                         if self.output_type:
-                            #  cast = {'int': int, 'float': float, 'list': json.loads}
-                            cast = {'int': compose(int, float), 'float': float, 'list': json.loads}
+                            cast = {'int': compose(int, float),
+                                    'float': float,
+                                    'list': json.loads,
+                                    'str': str,
+                                    'datetime': cast_datetime}
+
                             if self.output_type== 'list':
                                 each_output = each_output.replace("'", '"')
+
                             each_output = cast[self.output_type](each_output)
 
                 else:
@@ -201,19 +208,55 @@ class xlProcessor():
         self.converter = content['xlconverter']
         self.renderer = content['xlrenderer'] if 'xlrenderer' in content else None
         #  self.renderer = content['xlrenderer']
-        
+
         if 'xlparser' in content:
             output = content['xlparser']
             outputs = defaultdict(list)
             for ot in output:
-                output_name = ot['job_name'] 
+                output_name = ot['job_name']
                 for each_op in ot['chains']:
+                    op_type = each_op['type']
+                    print('\n\n', '[%s] op_type: %s' % (output_name, op_type))
                     op_args = defaultdict(str, each_op['args'])
-                    item = op[each_op['type']](op_args)
-                    outputs[output_name].append(item)
+
+                    if each_op['type'] == 'extend':
+                        arg_title = op_args['title']
+
+                        if type(arg_title) == list:
+                            arg_funcs = [e.rstrip() for e in op_args['func'].split('@')]
+
+                            len_title, len_func = len(arg_title), len(arg_funcs)-1
+                            arg_types = op_args['type'] if 'type' in op_args else [''] * len_title
+                            len_type = len(arg_types)
+
+                            if len_title != len_func:
+                                raise Exception('ProcessError',
+                                    'number of extension functions must be pairsed with titles!')
+
+                            elif len_title != len_type:
+                                import pdb; pdb.set_trace()
+                                raise Exception('ProcessError',
+                                    'number of extension types must be pairsed with titles!')
+
+                            elif arg_funcs[0] != 'template':
+                                raise Exception('ProcessError', 'Extension Format not matched!')
+                            new_op_args = defaultdict(str)
+                            for arg_title, arg_func, arg_type in zip(arg_title, arg_funcs[1:], arg_types):
+                                new_op_args['title'] = arg_title
+                                new_op_args['func'] = 'template@{}'.format(arg_func)
+                                new_op_args['type'] = arg_type
+                                item = op[each_op['type']](new_op_args)
+                                outputs[output_name].append(item)
+                        else:
+                            item = op[each_op['type']](op_args)
+                            outputs[output_name].append(item)
+                    else:
+                        item = op[each_op['type']](op_args)
+                        outputs[output_name].append(item)
         else:
             outputs = None
         self.jobs = outputs
+        self.content = content
         return outputs
 
 
@@ -222,7 +265,7 @@ class xlConverter():
         self.params = dict([(e['name'], {k:v for k,v in e.items() if k!='name'}) for e in params])
 
     def _load_excel(self, filepath, sheet_name, first_row, idx_colname, resetindex=True):
-        col_indexes, col_names = list(zip(*list(idx_colname.items())))        
+        col_indexes, col_names = list(zip(*list(idx_colname.items())))
 
         # handle column data type
         types = []
@@ -249,6 +292,7 @@ class xlConverter():
                 first_row = self.params[each]['first_row']
                 idx_colname = self.params[each]['idx_colname']
                 df, types = self._load_excel(filepath, sheet_name, first_row, idx_colname, resetindex)
+                import pdb; pdb.set_trace()
                 output.append(df)
         else:
             first_row = self.params[converter_name]['first_row']
@@ -258,6 +302,12 @@ class xlConverter():
 
         if 'dropna' in self.params[converter_name]:
             df.dropna(subset=[self.params[converter_name]['dropna']], inplace=True)
+
+        if 'trim' in self.params[converter_name]:
+            cols_trim = self.params[converter_name]['trim']
+            if type(cols_trim) != list:
+                cols_trim = [cols_trim]
+            df[cols_trim] = df[cols_trim].applymap(lambda x: str(x).strip())
 
         for col, col_type in zip(df.columns, types):
             if col_type:
@@ -317,13 +367,13 @@ class xlParser():
         for jobname, operations in self.jobs.items():
             if jobname != job_name: continue
             df = df_input
-            
+
             for i, each_op in enumerate(operations):
                 df = each_op.parse(df)
                 self.outputs[jobname].append(df)
 
-    def show_process(self, jobs):
-        for i, o in enumerate(jobs, 1):
+    def show_process(self, job_name):
+        for i, o in enumerate(self.outputs[job_name], 1):
             print('\n\noperation %d' % i)
             print(o.head())
 
@@ -424,7 +474,7 @@ class XlManager(object):
         self.renderer = xlRenderer(self.process.renderer) if self.process.renderer else None
         self.register_func()
 
-        
+
     def register_func(self):
         import func
         print('reigister_func')
@@ -446,8 +496,6 @@ class XlManager(object):
     def merge_sheets(self, converter_name, filepath, sheet_names):
         source_path = os.path.join(self.home, 'source')
         self.merger = xlMerger(self.process.converter, source_path)
-
-        #  self.df_source = self.merger.merge_sheets(converter_name, filepath, sheet_names)
         self.sources[converter_name] = self.merger.merge_sheets(converter_name, filepath, sheet_names)
 
         return self
@@ -455,8 +503,6 @@ class XlManager(object):
     def merge_files(self, converter_name, filepaths, sheet_name=0):
         source_path = os.path.join(self.home, 'source')
         self.merger = xlMerger(self.process.converter, source_path)
-
-        #  self.df_source = self.merger.merge_files(converter_name, filepaths, sheet_name)
         self.sources[converter_name] = self.merger.merge_files(converter_name, filepaths, sheet_name)
 
         return self
@@ -466,36 +512,29 @@ class XlManager(object):
 
         source_path = os.path.join(self.home, 'source')
         self.merger = xlMerger(self.process.converter, source_path)
-
-        #  self.df_source, files = self.merger.merge_all(converter_name, sheet_name, filename_excludes)
         self.sources[converter_name], files = self.merger.merge_all(converter_name, sheet_name, filename_excludes)
 
         print('files merged: %s' % ','.join(files))
-        #  self.df = df_source
-        #  self.df_source = df_source
         return self
 
     def to_excel(self, saved_path):
         if self.df is not None:
             self.renderer.to_excel(self.df, saved_path)
 
-    #  def render_excel(self, excel_template, saved_path):
     def render_excel(self, df, excel_template, saved_path):
         self.renderer.render_excel(df, saved_path, excel_template)
 
     def __str__(self):
         return str(self.df)
 
-    #  def parse(self, job_name=None, prev_job=None):
     def parse(self, job_name=None, df=None):
         if len(self.process.converter) == 1:
             converter_name = self.process.converter[0]['name']
             df_source = self.sources[converter_name]
-
-        if df is not None:
-            self.parser.parse(df_source, job_name)
-        else:
+        if df:
             self.parser.parse(df, job_name)
+        else:
+            self.parser.parse(df_source, job_name)
         return self
 
     def parse_all(self):
