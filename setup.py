@@ -5,12 +5,12 @@ setup(
     name = 'explay_testr',
     packages = ['explay'],
     scripts = ['bin/exp'],
-    version = '0.2.0',
+    version = '0.2.2',
     description = 'make excel jobs playful again',
     author = 'zealzel',
     author_email = 'zealzel@gmail.com',
     url = 'https://github.com/zealzel/explay',
-    #  download_url = 'https://github.com/zealzel/explay/tarball/v0.2',
+    download_url = 'https://github.com/zealzel/explay/tarball/v0.2.2',
     #  keywords = ['pandas', 'openpyxl', 'fire'],
     #  classifiers = [],
     install_requires=[
@@ -20,6 +20,7 @@ setup(
         'fire',
         'XlsxWriter',
         'numpy',
-        'xlrd'
+        'xlrd',
+        'pyyaml',
     ]
 )

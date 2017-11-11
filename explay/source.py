@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import os
 import re
 import sys
@@ -27,6 +32,7 @@ from explay.openpyxl_ext import insert_rows
 
 from explay.agg_func import agg_functions
 from explay.post_func import common_funcs
+
 
 #  pd.describe_option('display')
 
@@ -88,9 +94,7 @@ class GroupBy():
             df_grouped.columns = [name]
             dataframes.append(df_grouped)
         output = pd.concat(dataframes, axis=1)
-
-        if len(group_by) > 1:
-            output.index = output.index.droplevel(output.index.names[1:])
+        output = output.reset_index(group_by)
 
         return output
 
@@ -195,7 +199,8 @@ class xlProcessor():
         import yaml
         content = defaultdict(str, yaml.load(open(self.yml, 'r').read()))
         self.converter = content['xlconverter']
-        self.renderer = content['xlrenderer']
+        self.renderer = content['xlrenderer'] if 'xlrenderer' in content else None
+        #  self.renderer = content['xlrenderer']
         
         if 'xlparser' in content:
             output = content['xlparser']
@@ -301,19 +306,21 @@ class xlMerger(xlConverter):
 
 
 class xlParser():
-    def __init__(self, df, jobs):
-        self.df = df
+    def __init__(self, jobs):
         self.jobs = jobs
+        self.outputs = defaultdict(list)
 
-    def parse(self, job_name=None):
-        outputs = defaultdict(list)
+    def parse(self, df_input, job_name=None):
+        if job_name in self.outputs:
+            self.outputs[job_name] = list()
+
         for jobname, operations in self.jobs.items():
             if jobname != job_name: continue
-            df = self.df
+            df = df_input
+            
             for i, each_op in enumerate(operations):
                 df = each_op.parse(df)
-                outputs[jobname].append(df)
-        self.outputs = outputs
+                self.outputs[jobname].append(df)
 
     def show_process(self, jobs):
         for i, o in enumerate(jobs, 1):
@@ -364,17 +371,9 @@ class xlRenderer():
 
         get_cell = lambda sht, row, col: sht['%s%d' % (get_column_letter(col), row)]
 
-        #  for r_idx, row in enumerate(rows, self.first_row):
-            #  for c_idx, value in enumerate(row, 1):
-                #  get_cell(ws, r_idx, c_idx).value = value
-
         for r_idx, row in enumerate(rows, self.first_row):
-            #  for c_idx, value in enumerate(row, 1):
-            #  for c_idx in range(max(c_idxes)):
             for c_idx, df_colname in self.idx_colname.items():
                 col_idx = df.columns.get_loc(df_colname)
-                #  print(r_idx, c_idx, df_colname, col_idx)
-                #  get_cell(ws, r_idx, c_idx).value = value
                 get_cell(ws, r_idx, c_idx).value = row[col_idx+1]
 
         for row in ws.rows:
@@ -418,9 +417,13 @@ class XlManager(object):
         yml_path = '%s/%s' % (home, yml)
         self.process = xlProcessor(yml_file=yml_path)
         self.yml, self.home = yml_path, home
-        self.df = None
-        #  self.renderer = xlRenderer(self.process.renderer)
+
+        self.sources = dict()
+        self.parser = xlParser(self.process.jobs)
+
+        self.renderer = xlRenderer(self.process.renderer) if self.process.renderer else None
         self.register_func()
+
         
     def register_func(self):
         import func
@@ -443,49 +446,64 @@ class XlManager(object):
     def merge_sheets(self, converter_name, filepath, sheet_names):
         source_path = os.path.join(self.home, 'source')
         self.merger = xlMerger(self.process.converter, source_path)
-        df = self.merger.merge_sheets(converter_name, filepath, sheet_names)
-        self.df = df
-        return df
+
+        #  self.df_source = self.merger.merge_sheets(converter_name, filepath, sheet_names)
+        self.sources[converter_name] = self.merger.merge_sheets(converter_name, filepath, sheet_names)
+
+        return self
 
     def merge_files(self, converter_name, filepaths, sheet_name=0):
         source_path = os.path.join(self.home, 'source')
         self.merger = xlMerger(self.process.converter, source_path)
-        df = self.merger.merge_files(converter_name, filepaths, sheet_name)
-        self.df = df
+
+        #  self.df_source = self.merger.merge_files(converter_name, filepaths, sheet_name)
+        self.sources[converter_name] = self.merger.merge_files(converter_name, filepaths, sheet_name)
+
         return self
 
-    def merge_all(self, converter_name, sheet_name=0, filename_excludes=None, save_raw_excel=False):
-        print(sheet_name, filename_excludes, save_raw_excel)
+    def merge_all(self, converter_name, sheet_name=0, filename_excludes=None):
+        print(sheet_name, filename_excludes)
 
         source_path = os.path.join(self.home, 'source')
         self.merger = xlMerger(self.process.converter, source_path)
-        df_source, files = self.merger.merge_all(converter_name, sheet_name, filename_excludes)
+
+        #  self.df_source, files = self.merger.merge_all(converter_name, sheet_name, filename_excludes)
+        self.sources[converter_name], files = self.merger.merge_all(converter_name, sheet_name, filename_excludes)
+
         print('files merged: %s' % ','.join(files))
-        if save_raw_excel:
-            xlRenderer.to_excel(df_source, 'output/merged.xlsx')
-        self.df = df_source
+        #  self.df = df_source
+        #  self.df_source = df_source
         return self
 
     def to_excel(self, saved_path):
         if self.df is not None:
             self.renderer.to_excel(self.df, saved_path)
 
-    def render_excel(self, excel_template, saved_path):
-        if self.df is not None:
-            self.renderer.render_excel(self.df, saved_path, excel_template)
+    #  def render_excel(self, excel_template, saved_path):
+    def render_excel(self, df, excel_template, saved_path):
+        self.renderer.render_excel(df, saved_path, excel_template)
 
     def __str__(self):
         return str(self.df)
 
-    def parse(self, job_name=None):
-        if self.df is not None:
-            xp = xlParser(self.df, self.process.jobs)
-            xp.parse(job_name)
-            job_output = xp.outputs[job_name]
-            df_result = job_output[-1]
-            self.df = df_result
+    #  def parse(self, job_name=None, prev_job=None):
+    def parse(self, job_name=None, df=None):
+        if len(self.process.converter) == 1:
+            converter_name = self.process.converter[0]['name']
+            df_source = self.sources[converter_name]
+
+        if df is not None:
+            self.parser.parse(df_source, job_name)
+        else:
+            self.parser.parse(df, job_name)
         return self
 
+    def parse_all(self):
+        df_results = {}
+        for job in self.process.jobs:
+            self.parse(job)
+            df_results[job] = self.parser.outputs[job][-1]
+        return df_results
 
 op = {
     'group_by': GroupBy,
