@@ -1,16 +1,15 @@
 
+from collections import defaultdict
+import yaml
+from explay.post_func import common_funcs
+
+
 def is_buildin(func_str):
     try:
         eval(func_str)
         return True
     except NameError as ex:
         return False
-
-#  def replace_str(my_string, span_as_tuple, replaced_word):
-    #  string_as_list = list(my_string)
-    #  string_as_list[span_as_tuple[0]:span_as_tuple[1]] = replaced_word
-    #  replaced_string = ''.join(string_as_list)
-    #  return replaced_string
 
 
 def replace_str(my_string, spans, replaced_words):
@@ -25,13 +24,43 @@ def replace_str(my_string, spans, replaced_words):
     return new_string
 
 
-#  import regex
-#  s = 'I---{am}={Kevin +=1 }Lee'
-#  p = regex.compile('{.*?}')
-#  groups = [m for m in p.finditer(s)]
-#  spans = [list(g.span()) for g in groups]
+def register_custom_func(name, func):
+    global common_funcs
+    common_funcs[name] = func
 
 
-#  s = "{200 * score // 4}, {title+' ABC'}"
-#  spans = [[0, 18], [20, 34]]
-#  values = [200, 'bonus ABC']
+def register_func():
+    import func
+    funcs = [f for f in dir(func) if f.startswith('exp')]
+    for func_name in funcs:
+        func_name_in_yml = func_name[4:]
+        register_custom_func(func_name_in_yml, getattr(func, func_name))
+
+
+
+def to_yml(files, set_defualtdict=False, default_type=str):
+    content = yaml.load(open(files, 'r').read()) 
+    if set_defualtdict:
+        content = defaultdict(default_type, content)
+    return content
+
+
+
+#  def pd_set_option(pd, max_colwidth, max_columns, precision=1):
+def pd_set_option(max_colwidth, max_columns, precision=1):
+    import pandas as pd
+    pd.set_option('display.expand_frame_repr', False)
+    pd.set_option('display.max.colwidth', max_colwidth)
+    pd.set_option('display.max_columns', max_columns)
+    pd.set_option('precision', precision)
+    pd.set_option('display.float_format', '{:20,.1f}'.format)
+    pd.set_option('display.unicode.east_asian_width', True)
+
+
+
+def get_local_variables(dir):
+    print(globals().keys())
+    var_excludes = ['In', 'Out', 'exit', 'quit']
+    v = sorted(filter(lambda s:not s.startswith('_'), dir))
+    v = list(filter(lambda x: x not in var_excludes, v))
+    return v
