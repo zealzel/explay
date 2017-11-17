@@ -132,18 +132,16 @@ class xlRenderer():
 class xlManager():
 
     def __init__(self, yml_file, home=None, local_imported=None):
+        print("SDFS")
         home = os.getcwd() if not home else home
         yml_path = '%s/%s' % (home, yml_file)
         self.yml, self.home = yml_path, home
         self.sources = dict()
         self.content = _c = to_yml(yml_file, True)
         self.converter = _c['xlconverter']
-        self.renderer = _c['xlrenderer']
         self.parser = _c['xlparser']
-        self.variables = _c['variables']
-
+        self.renderer = _c['xlrenderer']
         self.renderer = xlRenderer(self.renderer) if self.renderer else None
-
 
         self.load_parser()
         if local_imported:
@@ -161,6 +159,10 @@ class xlManager():
         self.parsers = parsers
 
     def import_local(self, local):
+        for name, obj in self.parsers.items():
+            local[name] = obj
+
+    def import_source_df(self, local):
         for name, obj in self.parsers.items():
             local[name] = obj
 
@@ -182,6 +184,24 @@ class xlManager():
         cv = xlConverter(self.process.converter)
         df = cv.load_excel(converter_name, filepath, sheet_name)
         return df
+
+    def merge_from_config(self, merger_yml_file, local_imported=None):
+        merger_params = to_yml(merger_yml_file)['xlmerger']
+        merged_all = []
+        for each in merger_params:
+            merge_type, name, location = each['type'], each['name'], each['location']
+            print('\n', merge_type, name, location)
+            converter_name = each['converter_name']
+            if merge_type == 'merge_sheets':
+                df_merged = self.merge_sheets(converter_name, location, each['sheet_names'])
+            elif merge_type == 'merge_all':
+                df_merged, _ = self.merge_all(converter_name, each['sheet_name'])
+            elif merge_type == 'merge_files':
+                df_merged = self.merge_files(converter_name, location, each['sheet_name'])
+            merged_all.append(df_merged)
+            if local_imported:
+                local_imported[name] = df_merged
+        return merged_all
 
     def merge_sheets(self, converter_name, filepath, sheet_names):
         source_path = os.path.join(self.home, 'source')
