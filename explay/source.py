@@ -138,8 +138,12 @@ class xlManager():
         self.sources = dict()
         self.content = _c = to_yml(yml_file, True)
         self.converter = _c['xlconverter']
+        self.renderer = _c['xlrenderer']
         self.parser = _c['xlparser']
         self.variables = _c['variables']
+
+        self.renderer = xlRenderer(self.renderer) if self.renderer else None
+
 
         self.load_parser()
         if local_imported:
@@ -181,32 +185,26 @@ class xlManager():
 
     def merge_sheets(self, converter_name, filepath, sheet_names):
         source_path = os.path.join(self.home, 'source')
-        #  self.merger = xlMerger(self.process.converter, source_path)
         self.merger = xlMerger(self.converter, source_path)
         df_merged = self.merger.merge_sheets(converter_name, filepath, sheet_names)
         self.sources[converter_name] = df_merged
         return df_merged
-        #  return self
 
     def merge_files(self, converter_name, filepaths, sheet_name=0):
         source_path = os.path.join(self.home, 'source')
-        #  self.merger = xlMerger(self.process.converter, source_path)
         self.merger = xlMerger(self.converter, source_path)
         df_merged = self.merger.merge_files(converter_name, filepaths, sheet_name)
         self.sources[converter_name] = df_merged
         return df_merged
-        #  return self
 
     def merge_all(self, converter_name, sheet_name=0, filename_excludes=None):
         print(sheet_name, filename_excludes)
         source_path = os.path.join(self.home, 'source')
-        #  self.merger = xlMerger(self.process.converter, source_path)
         self.merger = xlMerger(self.converter, source_path)
-        df_merged = self.merger.merge_all(converter_name, sheet_name, filename_excludes)
-        self.sources[converter_name], files = df_merged
-        print('files merged: %s' % ','.join(files))
-        return df_merged
-        #  return self
+        df_merged, file_names = self.merger.merge_all(converter_name, sheet_name, filename_excludes)
+        self.sources[converter_name] = df_merged
+        print('files merged: %s' % ','.join(file_names))
+        return df_merged, file_names
 
     def to_excel(self, saved_path):
         if self.df is not None:

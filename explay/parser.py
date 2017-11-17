@@ -78,6 +78,20 @@ class BinaryOperation(Operation):
         self.op_type = 'binary'
 
 
+class Sort(Operation):
+    def __init__(self, params):
+        UnaryOperation.__init__(self, params)
+
+    def load(self):
+        print('Sort load')
+        self.values = self.args['values']
+
+    def parse(self, df):
+        sort_values = self.values
+        output = df.sort_values(sort_values)
+        return output
+
+
 class GroupBy(UnaryOperation):
     def __init__(self, params):
         UnaryOperation.__init__(self, params)
@@ -122,21 +136,21 @@ class GroupBy(UnaryOperation):
         return output
 
 
-class Trim(UnaryOperation):
-    def __init__(self, params):
-        UnaryOperation.__init__(self, params)
+#  class Trim(UnaryOperation):
+    #  def __init__(self, params):
+        #  UnaryOperation.__init__(self, params)
 
-    def load(self):
-        print('Trim load')
-        args = self.params['args']
-        self.columns = args['columns']
-        self.reset_index = args['reset_index']
+    #  def load(self):
+        #  print('Trim load')
+        #  args = self.params['args']
+        #  self.columns = args['columns']
+        #  self.reset_index = args['reset_index']
 
 
-    def parse(self, df):
-        output = df.reset_index(df.index.name)[self.columns]
-        output.index = range(1, len(output)+1)
-        return output
+    #  def parse(self, df):
+        #  output = df.reset_index(df.index.name)[self.columns]
+        #  output.index = range(1, len(output)+1)
+        #  return output
 
 
 class Extension(UnaryOperation):
@@ -353,6 +367,11 @@ def pivot_parser(op_params):
     return [item]
         
 
+def sort_parser(op_params):
+    item = Sort(op_params)
+    return [item]
+        
+
 def filter_parser(op_params):
     item = Filter(op_params)
     return [item]
@@ -435,6 +454,7 @@ class xlParser():
                        'filter': filter_parser,
                        'melt': melt_parser,
                        'pivot': pivot_parser,
+                       'sort': sort_parser,
                       }
             op_parser = parsers[op_type]
             op_params = each_operation.copy()
@@ -468,9 +488,9 @@ class xlParser():
         return result
 
     def show_outputs(self, num_for_each=5):
-        for each, op in zip(self.output, self._operations):
-            print(op, op.name)
-            print(each.head(num_for_each), '\n')
+        for i, (each, op) in enumerate(zip(self.output, self._operations)):
+            print('[index: %d][%s][%s]' % (i, op, op.name))
+            print(each.head(num_for_each), '\n\n')
 
 
 class xlBinaryParser():
