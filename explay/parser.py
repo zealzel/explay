@@ -63,7 +63,11 @@ class Operation():
         pass
     
     def __repr__(self):
-        return '<{}>'.format(self.__class__.__name__)
+        operation_type = self.__class__.__name__
+        msg = '[%s][%s]' % (operation_type, self.name)
+        return msg
+
+        #  return '<{}>'.format(self.__class__.__name__)
 
 
 class UnaryOperation(Operation):
@@ -83,7 +87,7 @@ class Sort(Operation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        print('Sort load')
+        #  print('Sort load')
         self.values = self.args['values']
 
     def parse(self, df):
@@ -97,7 +101,7 @@ class GroupBy(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        print('Groupby load')
+        #  print('Groupby load')
         self.by = self.args['by']
         self.agg = self.args['agg']
         self.eval_func()
@@ -158,7 +162,7 @@ class Extension(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        print('Extension load')
+        #  print('Extension load')
         args = self.params['args']
         self.title = args['title']
         self.output_type = args['type']
@@ -242,7 +246,7 @@ class Join(BinaryOperation):
         BinaryOperation.__init__(self, params)
 
     def load(self):
-        print('Join load')
+        #  print('Join load')
         args = self.params['args']
         self.on = args['join_on']
         self.how = args['how']
@@ -283,7 +287,7 @@ class Filter(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        print('Filter load')
+        #  print('Filter load')
         args = self.params['args']
         self.title = args['title']
         self.condition = args['condition']
@@ -316,7 +320,7 @@ class Pivot(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        print('Pivot load')
+        #  print('Pivot load')
         args = self.params['args']
         self.index = args['index']
         self.columns = args['columns']
@@ -336,7 +340,7 @@ class Melt(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        print('Melt load')
+        #  print('Melt load')
         args = self.params['args']
         self.id_vars = args['id_vars'] if args['id_vars'] else None
         self.value_vars = args['value_vars'] if args['value_vars'] else None
@@ -440,6 +444,7 @@ class xlParser():
         self._operations = []
         self.output = []
         self._operations = self.parse_schema(initializer)
+        #  register_func()
 
     @classmethod
     def parse_schema(cls, schema):
@@ -476,6 +481,7 @@ class xlParser():
         return self.parse(left, right)
 
     def parse(self, left, right=None):
+        register_func()
         df = left
         for i, each_op in enumerate(self._operations):
             print(i, each_op)
@@ -496,6 +502,7 @@ class xlParser():
 class xlBinaryParser():
 
     def __init__(self, binary_initializer):
+        self.name = binary_initializer['name']
         left = binary_initializer['left']
         right = binary_initializer['right']
         output = binary_initializer['output']
@@ -536,9 +543,9 @@ class xlBinaryParser():
         all_parsers = '\n'.join(all_repr)
 
         if self.check_ParserType() == 'unary_parser':
-            my_type = '[Unary Parser]'
+            my_type = '[Unary Parser][%s]' % self.name
         elif self.check_ParserType() == 'binary_parser':
-            my_type = '[Binary Parser]'
+            my_type = '[Binary Parser][%s]' % self.name
         else:
             raise
         return '%s\n%s' % (my_type, all_parsers)

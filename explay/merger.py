@@ -36,8 +36,6 @@ from explay.agg_func import agg_functions
 from explay.post_func import common_funcs
 
 
-register_func()
-
 
 def compose(*functions):
     def compose2(f, g):
@@ -48,6 +46,14 @@ def compose(*functions):
 class xlConverter():
     def __init__(self, params):
         self.params = dict([(e['name'], {k:v for k,v in e.items() if k!='name'}) for e in params])
+
+    def __repr__(self):
+        msg = '[Converter]\n'
+        for name, param in self.params.items():
+            msg += ' converter_name: %s\n' % name
+            #  for each in param:
+                #  msg += str(each)
+        return msg
 
     def _load_excel(self, filepath, sheet_name, first_row, idx_colname, resetindex=True):
         col_indexes, col_names = list(zip(*list(idx_colname.items())))
