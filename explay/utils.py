@@ -52,7 +52,7 @@ def pd_set_option(max_colwidth, max_columns, precision=1):
     pd.set_option('display.expand_frame_repr', False)
     pd.set_option('display.max.colwidth', max_colwidth)
     pd.set_option('display.max_columns', max_columns)
-    pd.set_option('precision', precision)
+    pd.set_option('display.precision', precision)
     pd.set_option('display.float_format', '{:20,.1f}'.format)
     pd.set_option('display.unicode.east_asian_width', True)
 

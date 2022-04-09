@@ -127,7 +127,6 @@ class GroupBy(UnaryOperation):
         group_by = self.by
         agg_dict = self.agg
         D = df.groupby(group_by, sort=False)
-
         dataframes = []
         for name, values in agg_dict.items():
             col, func = values

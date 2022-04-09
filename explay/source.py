@@ -78,9 +78,10 @@ class xlRenderer():
                     worksheet.write_datetime('%s%s' % (chr(65+i), index + 2), v, time_format)
         writer.save()
 
-    def render_excel(self, df, saved_name, template_name):
+    def render_excel(self, df, saved_name, template_name, template_dir='template'):
 
-        xls_file, xlsx_file = ['template/%s.%s' % (template_name, ext) for ext in ['xls', 'xlsx']]
+        #  xls_file, xlsx_file = ['template/%s.%s' % (template_name, ext) for ext in ['xls', 'xlsx']]
+        xls_file, xlsx_file = ['%s/%s.%s' % (template_dir, template_name, ext) for ext in ['xls', 'xlsx']]
         template = load_workbook(xlsx_file)
 
         rows = dataframe_to_rows(df, index=True, header=False)
@@ -258,14 +259,18 @@ class xlManager():
 
 
 class ExPlay():
-    def __init__(self, home=None):
+    def __init__(self, home=None, proj_name=None):
         self.home = home if home else os.getcwd()
         self._sources = dict()
-        self._parse_yml()
+        self._parse_yml(proj_name)
         from explay.utils import pd_set_option; pd_set_option(max_colwidth=40, max_columns=15)
+        __import__('ipdb').set_trace()
 
-    def _parse_yml(self):
-        yml_files = glob.glob(f'{self.home}/*.yml')
+    def _parse_yml(self, proj_name=None):
+        if proj_name:
+            yml_files = ['{}/{}.yml'.format(self.home, proj_name)]
+        else:
+            yml_files = glob.glob(f'{self.home}/*.yml')
         convs, mergs, parss, rends, projs, outs = [], [], [], [], [], []
         for f in yml_files:
 
@@ -461,6 +466,7 @@ class ExPlay():
             return parser(result)
 
     def run_proj(self, to_excel=True):
+        __import__('ipdb').set_trace()
         components = [self._converter, self._merg_params, self._parsers, self._project]
         if not all(components):
             print('please define all explay components!')
@@ -477,18 +483,23 @@ class ExPlay():
                 self._render_excel()
             else:
                 self._to_excel()
+        else:
+            for name, result in self.results.items():
+                print('\nproj result: {} (first 10 rows)'.format(name))
+                print(result.head(10))
 
     def _to_excel(self):
         for proj_name, each_result in self.results.items():
-            self._renderer.to_excel(each_result, 
-                    'out_{}.xlsx'.format(proj_name))
+            self._renderer.to_excel(each_result,  'out_{}.xlsx'.format(proj_name))
 
     def _render_excel(self):
-        for e in self._template.output:
+        #  for e in self._template.output:
+        for e, e2 in zip(self._template.output, self._template.params['template']):
             template_name = e['template']
+            template_dir = e2['dir']
             proj_result = self.results[e['proj_result']]
             path=  e['path']
-            self._renderer.render_excel(proj_result, path, template_name)
+            self._renderer.render_excel(proj_result, path, template_name, template_dir)
 
     def export(self):
         inputs = self._df_inputs()
