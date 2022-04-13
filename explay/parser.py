@@ -177,6 +177,7 @@ class Extension(UnaryOperation):
         output = []
 
         for index, row in df.iterrows():
+            print(f'index: {index}')
             try:
                 titles = df.columns.tolist()
                 input_dict = dict(zip(titles, row))
@@ -217,6 +218,8 @@ class Extension(UnaryOperation):
                                     'datetime': cast_datetime}
                             if self.output_type== 'list':
                                 each_output = each_output.replace("'", '"')
+                            if index==119:
+                                __import__('ipdb').set_trace()
                             each_output = cast[self.output_type](each_output)
                 else:
                     func = global_func[func_name]
@@ -260,7 +263,9 @@ class Join(BinaryOperation):
         if self.left_fillna:
             col_to_fillna, replaced = self.left_fillna
             isnull = getattr(joined_df, col_to_fillna).isnull()
-            joined_df.loc[isnull, col_to_fillna] = [ [[]] * isnull.sum() ]
+            #  import ipdb; ipdb.set_trace()
+            #  joined_df.loc[isnull, col_to_fillna] = [ [[]] * isnull.sum() ]
+            #  import ipdb; ipdb.set_trace()
         return joined_df
 
 
@@ -489,6 +494,7 @@ class xlParser():
             else:
                 df = each_op.parse(df, right)
             self.output.append(df)
+
         result = self.output[-1]
         return result
 
