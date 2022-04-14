@@ -134,10 +134,10 @@ class xlMerger(xlConverter):
         df.index = range(len(df))
         return df
 
-    def merge_sheets(self, converter_name, filepath, sheet_names):
+    def merge_sheets(self, converter_name, xlsx_path, sheet_names):
         df_list = []
         for sheet_name in sheet_names:
-            df_each = self.load_excel(converter_name, filepath, sheet_name)
+            df_each = self.load_excel(converter_name, xlsx_path, sheet_name)
             df_list.append(df_each)
         df_merged = pd.concat(df_list)
         return df_merged

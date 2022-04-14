@@ -3,16 +3,16 @@ from explay.utils import pd_set_option
 
 pd_set_option(max_colwidth=80, max_columns=15)
 
-PROJECT1 = "project1"
-PROJECT2 = "project2"
 
-home_typ_merge_files = "examples/typical/merge_files_2"
-proj_typ_merge_files = "project"
-home = home_typ_merge_files
-proj = proj_typ_merge_files
+home_typ_merge_sheets = "examples/typical/merge_sheets"
+
+home_typ_merge_files_1 = "examples/typical/merge_files_1"
+home_typ_merge_files_2 = "examples/typical/merge_files_2"
 
 
 if __name__ == "__main__":
+    home = home_typ_merge_sheets
+    proj = "project"
     ee = ExPlay(home=home, proj_name=proj)
     ee.run_proj(to_excel=False)
 
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     #  "orders"
     #  )
 
-    df.to_excel("out.xlsx")
+    #  df.to_excel("out.xlsx")
 
 """
 ref: https://stackoverflow.com/questions/47571618/how-to-split-expand-a-string-value-into-several-pandas-dataframe-rows

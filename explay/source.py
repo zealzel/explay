@@ -367,9 +367,9 @@ class ExPlay:
             print(self._project)
 
     def _merge_sheets(self, conv_name, xlsx_path, sheet_names):
-        xlsx_dir = os.path.abspath(os.path.dirname(xlsx_path))
+        xlsx_dir = self._get_abs_source_path(xlsx_path)
         self.merger = xlMerger(self._conv_params, xlsx_dir)
-        df_merged = self.merger.merge_sheets(conv_name, xlsx_path, sheet_names)
+        df_merged = self.merger.merge_sheets(conv_name, xlsx_dir, sheet_names)
         self._sources[conv_name] = df_merged
         return df_merged
 
