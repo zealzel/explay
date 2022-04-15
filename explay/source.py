@@ -442,6 +442,8 @@ class ExPlay:
         for each in self._merg_params:
             each = defaultdict(str, each)
             merge_type, name, location = each["type"], each["name"], each["location"]
+            excludes = each['excludes']
+            sheet_name = each['sheet_name']
             xlsx_dir, xlsx_path = each["xlsx_dir"], each["xlsx_path"]
             print("\n", merge_type, name, location)
             converter_name = each["converter_name"]
@@ -453,14 +455,14 @@ class ExPlay:
                 )
 
             elif merge_type == "merge_all":
-                excludes = each["excludes"]
+                xlsx_dir = each['xlsx_dir']
                 df_merged, _ = self._merge_all(
-                    converter_name, xlsx_dir, each["sheet_name"], excludes
+                    converter_name, xlsx_dir, sheet_name, excludes
                 )
 
             elif merge_type == "merge_files":
                 df_merged = self._merge_files(
-                    converter_name, location, xlsx_dir, each["sheet_name"]
+                    converter_name, location, xlsx_dir, sheet_name
                 )
             merged_all[name] = df_merged
         return merged_all

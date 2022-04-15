@@ -4,6 +4,8 @@ from explay.utils import pd_set_option
 pd_set_option(max_colwidth=80, max_columns=15)
 
 
+home_typ_merge_all = "examples/typical/merge_all"
+
 home_typ_merge_sheets = "examples/typical/merge_sheets"
 
 home_typ_merge_files_1 = "examples/typical/merge_files_1"
@@ -11,7 +13,7 @@ home_typ_merge_files_2 = "examples/typical/merge_files_2"
 
 
 if __name__ == "__main__":
-    home = home_typ_merge_sheets
+    home = home_typ_merge_all
     proj = "project"
     ee = ExPlay(home=home, proj_name=proj)
     ee.run_proj(to_excel=False)

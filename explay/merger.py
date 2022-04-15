@@ -116,11 +116,11 @@ class xlMerger(xlConverter):
         df_merged = pd.concat(df_list)
         return df_merged
 
-    def merge_all(self, converter_name, sheet_name=0, filename_excludes=None):
+    def merge_all(self, converter_name, sheet_name=0, excludes=None):
         files = glob.glob("{}/*xlsx*".format(self.source_path))
         file_names = [os.path.basename(f) for f in files]
-        if filename_excludes:
-            file_names = list(filter(lambda f: f not in filename_excludes, file_names))
+        if excludes:
+            file_names = list(filter(lambda f: f not in excludes, file_names))
         else:
             file_names = file_names
 
