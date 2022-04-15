@@ -161,55 +161,35 @@ class ExPlay:
 
         pd_set_option(max_colwidth=40, max_columns=15)
 
-    def _parse_yml(self, proj_name=None):
-        if proj_name:
-            yml_files = ["{}/{}.yml".format(self.home, proj_name)]
-        else:
-            yml_files = glob.glob(f"{self.home}/*.yml")
-        convs, mergs, parss, rends, projs, outs = [], [], [], [], [], []
-        for f in yml_files:
+    def _parse_yml(self, proj_name):
+        yml_file = os.path.join(self.home, f"{proj_name}.yml")
 
-            each = to_yml(f, True)
-            converter = each["xlconverter"]
-            merger = each["xlmerger"]
-            parser = each["xlparser"]
-            renderer = each["xlrenderer"]
-            project = each["xlproject"]
-            out = each["xloutput"]
+        each = yaml.load(open(yml_file, "r"), yaml.Loader)
+        project = each.get("xlproject", None)
+        converter = each.get("xlconverter", None)
+        merger = each.get("xlmerger", None)
+        parser = each.get("xlparser", None)
+        renderer = each.get("xlrenderer", None)
+        out = each.get("xloutput", None)
 
-            if converter:
-                convs.append([f, converter])
-            if merger:
-                mergs.append([f, merger])
-            if parser:
-                parss.append([f, parser])
-            if renderer:
-                rends.append([f, renderer])
-            if project:
-                projs.append([f, project])
-            if out:
-                outs.append([f, out])
+        self._proj_params = project or None
+        self._conv_params = converter or None
+        self._merg_params = merger or None
+        self._pars_params = parser or None
+        self._rend_params = renderer or None
+        self._out_params = out or None
 
-        assert all([len(e) < 2 for e in [convs, mergs, parss, rends, projs, outs]])
-        self._conv_params = convs[0][1] if convs else None
-        self._merg_params = mergs[0][1] if mergs else None
-        self._pars_params = parss[0][1] if parss else None
-        self._rend_params = rends[0][1] if rends else None
-        self._proj_params = projs[0][1] if projs else None
-        self._out_params = outs[0][1] if outs else None
-
-        self._converter = xlConverter(self._conv_params) if convs else None
+        self._converter = xlConverter(self._conv_params) if converter else None
         self._parsers = (
             [
                 xlBinaryParser(defaultdict(str, each_params))
                 for each_params in self._pars_params
             ]
-            if parss
+            if parser
             else []
         )
-        self._renderer = xlRenderer(self._rend_params) if rends else None
-
-        self._template = xlTemplate(self._out_params) if outs else None
+        self._renderer = xlRenderer(self._rend_params) if renderer else None
+        self._template = xlTemplate(self._out_params) if out else None
         if self._proj_params:
             self._project = yaml.dump(
                 self._proj_params, indent=True, default_flow_style=False
@@ -218,6 +198,12 @@ class ExPlay:
             self._project = None
 
     def show_config(self):
+        if self._project:
+            print("************************")
+            print("*       project        *")
+            print("************************")
+            print(self._project)
+
         if self._converter:
             print("************************")
             print("*       converter      *")
@@ -243,12 +229,6 @@ class ExPlay:
             print("*       renderer       *")
             print("************************")
             print(self._renderer)
-
-        if self._project:
-            print("************************")
-            print("*       project        *")
-            print("************************")
-            print(self._project)
 
     def _merge_sheets(self, conv_name, xlsx_path, sheet_names):
         xlsx_dir = self._get_abs_source_path(xlsx_path)
@@ -355,7 +335,7 @@ class ExPlay:
                 )
 
             elif merge_type == "merge_all":
-                xlsx_dir = each['xlsx_dir']
+                xlsx_dir = each["xlsx_dir"]
                 df_merged, _ = self._merge_all(
                     converter_name, xlsx_dir, sheet_name, excludes
                 )
@@ -406,7 +386,7 @@ class ExPlay:
         self.export()
         self.results = {}
         for each_proj in self._proj_params:
-            print('each_proj', each_proj)
+            print("each_proj", each_proj)
             proj_name = each_proj["name"]
             self.results[proj_name] = self._run(each_proj)
 
