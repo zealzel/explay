@@ -201,8 +201,8 @@ class Extension(UnaryOperation):
                                     'datetime': cast_datetime}
                             if self.output_type== 'list':
                                 each_output = each_output.replace("'", '"')
-                            if index==119:
-                                __import__('ipdb').set_trace()
+                            #  if index==119:
+                                #  __import__('ipdb').set_trace()
                             each_output = cast[self.output_type](each_output)
                 else:
                     func = global_func[func_name]
@@ -246,9 +246,7 @@ class Join(BinaryOperation):
         if self.left_fillna:
             col_to_fillna, replaced = self.left_fillna
             isnull = getattr(joined_df, col_to_fillna).isnull()
-            #  import ipdb; ipdb.set_trace()
             #  joined_df.loc[isnull, col_to_fillna] = [ [[]] * isnull.sum() ]
-            #  import ipdb; ipdb.set_trace()
         return joined_df
 
 

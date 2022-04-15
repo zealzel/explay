@@ -322,18 +322,34 @@ class ExPlay:
     def _df_inputs(self):
         if not self._merg_params:
             return None
-        merged_all = {}
-        for each in self._merg_params:
-            each = defaultdict(str, each)
-            merge_type, name, location = each["type"], each["name"], each["location"]
-            excludes = each['excludes']
-            sheet_name = each['sheet_name']
-            xlsx_dir, xlsx_path = each["xlsx_dir"], each["xlsx_path"]
-            print("\n", merge_type, name, location)
-            converter_name = each["converter_name"]
+        merged = {}
+        for each_merger in self._merg_params:
+            each = defaultdict(str, each_merger)
 
-            print(merge_type)
-            if merge_type == "merge_sheets":
+            # shared
+            name, merge_type, converter_name, sheet_name = (
+                each["name"],
+                each["type"],
+                each["converter_name"],
+                each["sheet_name"],
+            )
+
+            # merge_files
+            location = each["location"]
+
+            # merge_sheets
+            xlsx_path = each["xlsx_path"]
+
+            # merge_all
+            xlsx_dir = each["xlsx_dir"]
+            excludes = each["excludes"]
+
+            if merge_type == "merge_files":
+                df_merged = self._merge_files(
+                    converter_name, location, xlsx_dir, sheet_name
+                )
+
+            elif merge_type == "merge_sheets":
                 df_merged = self._merge_sheets(
                     converter_name, xlsx_path, each["sheet_names"]
                 )
@@ -344,12 +360,8 @@ class ExPlay:
                     converter_name, xlsx_dir, sheet_name, excludes
                 )
 
-            elif merge_type == "merge_files":
-                df_merged = self._merge_files(
-                    converter_name, location, xlsx_dir, sheet_name
-                )
-            merged_all[name] = df_merged
-        return merged_all
+            merged[name] = df_merged
+        return merged
 
     def _run(self, node):
         local_name = dir(__main__)
