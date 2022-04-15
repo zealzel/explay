@@ -4,36 +4,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-import re
-import sys
 import json
-import yaml
 import regex
-from copy import copy
 import datetime
-from collections import namedtuple, defaultdict
+from collections import defaultdict
 import inspect
 import functools
-import glob
-import numpy as np
 
-import xlrd
-from openpyxl import load_workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
-from openpyxl.utils import get_column_letter
-from openpyxl.styles import PatternFill, Font
-
-from pandas import DataFrame
 import pandas as pd
-import pdb
 
 from explay.utils import is_buildin, replace_str, register_func
-from explay.openpyxl_ext import insert_rows
 
 from explay.agg_func import agg_functions
 from explay.post_func import common_funcs
-
 
 
 def rpartial(func, *args):

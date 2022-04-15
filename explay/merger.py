@@ -5,35 +5,9 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import re
-import sys
-import json
-import yaml
-import regex
-from copy import copy
-import datetime
-from collections import namedtuple, defaultdict
-import inspect
 import functools
 import glob
-import numpy as np
-
-import xlrd
-from openpyxl import load_workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
-from openpyxl.utils import get_column_letter
-from openpyxl.styles import PatternFill, Font
-
-from pandas import DataFrame
 import pandas as pd
-import pdb
-
-from explay.utils import is_buildin, replace_str
-from explay.openpyxl_ext import insert_rows
-
-from explay.utils import register_func
-from explay.agg_func import agg_functions
-from explay.post_func import common_funcs
 
 
 def compose(*functions):
@@ -157,26 +131,3 @@ class xlMerger(xlConverter):
         df = pd.concat(df_all, axis=0)
         df.index = range(len(df))
         return df, file_names
-
-
-#  class xlParser():
-#  def __init__(self, jobs):
-#  self.jobs = jobs
-#  self.outputs = defaultdict(list)
-
-#  def parse(self, df_input, job_name=None):
-#  if job_name in self.outputs:
-#  self.outputs[job_name] = list()
-
-#  for jobname, operations in self.jobs.items():
-#  if jobname != job_name: continue
-#  df = df_input
-
-#  for i, each_op in enumerate(operations):
-#  df = each_op.parse(df)
-#  self.outputs[jobname].append(df)
-
-#  def show_process(self, job_name):
-#  for i, o in enumerate(self.outputs[job_name], 1):
-#  print('\n\noperation %d' % i)
-#  print(o.head())
