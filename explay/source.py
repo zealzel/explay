@@ -23,11 +23,10 @@ from openpyxl.styles import PatternFill
 import pandas as pd
 
 from explay.utils import to_yml
+from explay.utils import pd_set_option
 from explay.openpyxl_ext import insert_rows
 from explay.parser import xlBinaryParser
 from explay.merger import xlMerger, xlConverter
-
-#  from explay.utils import register_func
 
 
 def compose(*functions):
@@ -155,10 +154,9 @@ class xlTemplate:
 class ExPlay:
     def __init__(self, home=None, proj_name=None):
         self.home = home if home else os.getcwd()
-        self._sources = dict()
+        #  self._sources = dict()
         self._parse_yml(proj_name)
-        from explay.utils import pd_set_option
-
+        self.inputs = self._df_inputs()
         pd_set_option(max_colwidth=40, max_columns=15)
 
     def _parse_yml(self, proj_name):
@@ -234,7 +232,7 @@ class ExPlay:
         xlsx_dir = self._get_abs_source_path(xlsx_path)
         self.merger = xlMerger(self._conv_params, xlsx_dir)
         df_merged = self.merger.merge_sheets(conv_name, xlsx_dir, sheet_names)
-        self._sources[conv_name] = df_merged
+        #  self._sources[conv_name] = df_merged
         return df_merged
 
     def merge_sheets(self, conv_name, xlsx_path, sheet_names, save=False):
@@ -261,7 +259,7 @@ class ExPlay:
         filepaths = [os.path.join(source_path, f) for f in relative_paths]
         self.merger = xlMerger(self._conv_params, source_path)
         df_merged = self.merger.merge_files(conv_name, filepaths, sheet_name)
-        self._sources[conv_name] = df_merged
+        #  self._sources[conv_name] = df_merged
         return df_merged
 
     def merge_files(
@@ -283,7 +281,7 @@ class ExPlay:
         self.merger = xlMerger(self._conv_params, source_path)
         df_merged, file_names = self.merger.merge_all(conv_name, sheet_name, excludes)
 
-        self._sources[conv_name] = df_merged
+        #  self._sources[conv_name] = df_merged
         return df_merged, file_names
 
     def merge_all(
@@ -343,38 +341,34 @@ class ExPlay:
             merged[name] = df_merged
         return merged
 
-    def _run(self, node):
-        local_name = dir(__main__)
-        _local = lambda x: getattr(__main__, x)
-        if "name" in node:
-            del node["name"]
-        node_name = list(node.keys())[0]
-        parser = getattr(__main__, node_name)
+    def _run(self, each_proj):
+        if "name" in each_proj:
+            del each_proj["name"]
+        parser_name = list(each_proj.keys())[0]
+        input_name = each_proj[parser_name]
+        parser = [e for e in self._parsers if e.name == parser_name][0]
         tp = parser.check_ParserType()
-        if tp == "binary_parser":
-            node_child = node[node_name]
-            left = node_child["left"]
-            right = node_child["right"]
-            if type(left) == str and left in local_name:
-                left_result = _local(left)
-            else:
-                left_result = self._run(left)
 
-            if type(right) == str and right in local_name:
-                right_result = _local(right)
-            else:
-                right_result = self._run(right)
-            return parser(left_result, right_result)
+        if tp == "binary_parser":
+            pass
+            #  node_child = each_proj[node_name]
+            #  left = node_child["left"]
+            #  right = node_child["right"]
+            #  if type(left) == str and left in local_name:
+                #  left_result = _local(left)
+            #  else:
+                #  left_result = self._run(left)
+
+            #  if type(right) == str and right in local_name:
+                #  right_result = _local(right)
+            #  else:
+                #  right_result = self._run(right)
+
+            #  return parser(left_result, right_result)
 
         elif tp == "unary_parser":
-            node_key = list(node.keys())[0]
-            node_value = node[node_key]
-            if type(node_value) == str and node_value in local_name:
-                result = _local(node_value)
-            else:
-                result = self._run(node_value)
-
-            temp_result = parser(result)
+            df_input = self.inputs[input_name]
+            temp_result = parser(df_input)
             return temp_result
 
     def run_proj(self, to_excel=True):
@@ -382,11 +376,9 @@ class ExPlay:
         if not all(components):
             print("please define all explay components!")
             return
-
-        self.export()
         self.results = {}
         for each_proj in self._proj_params:
-            print("each_proj", each_proj)
+            print("==== each_proj ====", each_proj)
             proj_name = each_proj["name"]
             self.results[proj_name] = self._run(each_proj)
 
@@ -413,10 +405,12 @@ class ExPlay:
             path = e["path"]
             self._renderer.render_excel(proj_result, path, template_name, template_dir)
 
-    def export(self):
+    def export_inputs(self):
         inputs = self._df_inputs()
         for input_name, each_df in inputs.items():
             setattr(__main__, input_name, each_df)
+
+    def export_parsers(self):
         for each_parser in self._parsers:
             setattr(__main__, each_parser.name, each_parser)
 
