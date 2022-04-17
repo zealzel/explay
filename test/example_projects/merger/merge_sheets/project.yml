@@ -1,0 +1,26 @@
+xlproject:
+  - name: proj_merge_sheets 
+    parser1: df
+
+xlconverter:
+  - name: table1
+    first_row: 3
+    idx_colname:
+      3: name
+      4: address
+      5: email
+
+xlmerger:
+  - type: merge_sheets
+    name: df
+    converter_name: table1
+    xlsx_path: in.xlsx
+    sheet_names: [0, 2, 3]
+
+xlparser:
+  - name: parser1
+    output:
+      - name: action1 
+        type: filter
+        args:
+          title: [name, address, email]
