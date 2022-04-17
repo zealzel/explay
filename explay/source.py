@@ -5,14 +5,12 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import glob
 import yaml
 import __main__
 from copy import copy
 import datetime
 from collections import defaultdict
 import functools
-import glob
 
 import xlrd
 from openpyxl import load_workbook
@@ -22,7 +20,6 @@ from openpyxl.styles import PatternFill
 
 import pandas as pd
 
-from explay.utils import to_yml
 from explay.utils import pd_set_option
 from explay.openpyxl_ext import insert_rows
 from explay.parser import xlBinaryParser
@@ -153,8 +150,7 @@ class xlTemplate:
 
 class ExPlay:
     def __init__(self, home=None, proj_name=None):
-        self.home = home if home else os.getcwd()
-        #  self._sources = dict()
+        self.home = home or os.getcwd()
         self._parse_yml(proj_name)
         self.inputs = self._df_inputs()
         pd_set_option(max_colwidth=40, max_columns=15)
@@ -228,22 +224,6 @@ class ExPlay:
             print("************************")
             print(self._renderer)
 
-    def _merge_sheets(self, conv_name, xlsx_path, sheet_names):
-        xlsx_dir = self._get_abs_source_path(xlsx_path)
-        self.merger = xlMerger(self._conv_params, xlsx_dir)
-        df_merged = self.merger.merge_sheets(conv_name, xlsx_dir, sheet_names)
-        #  self._sources[conv_name] = df_merged
-        return df_merged
-
-    def merge_sheets(self, conv_name, xlsx_path, sheet_names, save=False):
-        print("sheets of file %s merged." % xlsx_path)
-        df_merged = self._merge_sheets(conv_name, xlsx_path, sheet_names)
-        if save:
-            saved_path = "{}/{}_merged.xlsx".format(self.home, conv_name)
-            xlRenderer.to_excel(df_merged, saved_path)
-        else:
-            print(df_merged)
-
     def _get_abs_source_path(self, xlsx_dir=None):
         if xlsx_dir:
             if os.path.isabs(xlsx_dir):
@@ -254,12 +234,14 @@ class ExPlay:
             source_path = self.home
         return source_path
 
-    def _merge_files(self, conv_name, relative_paths, xlsx_dir=None, sheet_name=0):
-        source_path = self._get_abs_source_path(xlsx_dir)
-        filepaths = [os.path.join(source_path, f) for f in relative_paths]
-        self.merger = xlMerger(self._conv_params, source_path)
-        df_merged = self.merger.merge_files(conv_name, filepaths, sheet_name)
-        #  self._sources[conv_name] = df_merged
+    def merge_sheets(self, conv_name, xlsx_path, sheet_names, save=False):
+        print("sheets of file %s merged." % xlsx_path)
+        xlsx_dir = self._get_abs_source_path(xlsx_path)
+        self.merger = xlMerger(self._conv_params, xlsx_dir)
+        df_merged = self.merger.merge_sheets(conv_name, xlsx_dir, sheet_names)
+        if save:
+            saved_path = "{}/{}_merged.xlsx".format(self.home, conv_name)
+            xlRenderer.to_excel(df_merged, saved_path)
         return df_merged
 
     def merge_files(
@@ -267,35 +249,25 @@ class ExPlay:
     ):
         source_path = self._get_abs_source_path(xlsx_dir)
         filepaths = [os.path.join(source_path, f) for f in relative_paths]
-        df_merged = self._merge_files(conv_name, relative_paths, xlsx_dir, sheet_name)
+        self.merger = xlMerger(self._conv_params, source_path)
+        df_merged = self.merger.merge_files(conv_name, filepaths, sheet_name)
         print("files merged:\n%s" % "\n".join(filepaths))
         if save:
             saved_path = "{}/{}_merged.xlsx".format(self.home, conv_name)
             xlRenderer.to_excel(df_merged, saved_path)
-        else:
-            print(df_merged)
-
-    def _merge_all(self, conv_name, xlsx_dir=None, sheet_name=0, excludes=None):
-        print("_merge_all!")
-        source_path = self._get_abs_source_path(xlsx_dir)
-        self.merger = xlMerger(self._conv_params, source_path)
-        df_merged, file_names = self.merger.merge_all(conv_name, sheet_name, excludes)
-
-        #  self._sources[conv_name] = df_merged
-        return df_merged, file_names
+        return df_merged
 
     def merge_all(
         self, conv_name, xlsx_dir=None, sheet_name=0, excludes=None, save=False
     ):
-        df_merged, file_names = self._merge_all(
-            conv_name, xlsx_dir, sheet_name, excludes
-        )
+        source_path = self._get_abs_source_path(xlsx_dir)
+        self.merger = xlMerger(self._conv_params, source_path)
+        df_merged, file_names = self.merger.merge_all(conv_name, sheet_name, excludes)
         print("files merged: %s" % ",".join(file_names))
         if save:
             saved_path = "{}/{}_merged.xlsx".format(self.home, conv_name)
             xlRenderer.to_excel(df_merged, saved_path)
-        else:
-            print(df_merged)
+        return df_merged
 
     def _df_inputs(self):
         if not self._merg_params:
@@ -311,7 +283,6 @@ class ExPlay:
                 each["converter_name"],
                 each["sheet_name"],
             )
-
             # merge_files
             location = each["location"]
 
@@ -323,21 +294,18 @@ class ExPlay:
             excludes = each["excludes"]
 
             if merge_type == "merge_files":
-                df_merged = self._merge_files(
+                df_merged = self.merge_files(
                     converter_name, location, xlsx_dir, sheet_name
                 )
-
             elif merge_type == "merge_sheets":
-                df_merged = self._merge_sheets(
+                df_merged = self.merge_sheets(
                     converter_name, xlsx_path, each["sheet_names"]
                 )
-
             elif merge_type == "merge_all":
                 xlsx_dir = each["xlsx_dir"]
-                df_merged, _ = self._merge_all(
+                df_merged = self.merge_all(
                     converter_name, xlsx_dir, sheet_name, excludes
                 )
-
             merged[name] = df_merged
         return merged
 
@@ -355,14 +323,14 @@ class ExPlay:
             #  left = node_child["left"]
             #  right = node_child["right"]
             #  if type(left) == str and left in local_name:
-                #  left_result = _local(left)
+            #  left_result = _local(left)
             #  else:
-                #  left_result = self._run(left)
+            #  left_result = self._run(left)
 
             #  if type(right) == str and right in local_name:
-                #  right_result = _local(right)
+            #  right_result = _local(right)
             #  else:
-                #  right_result = self._run(right)
+            #  right_result = self._run(right)
 
             #  return parser(left_result, right_result)
 
@@ -397,7 +365,6 @@ class ExPlay:
             self._renderer.to_excel(each_result, "out_{}.xlsx".format(proj_name))
 
     def _render_excel(self):
-        #  for e in self._template.output:
         for e, e2 in zip(self._template.output, self._template.params["template"]):
             template_name = e["template"]
             template_dir = e2["dir"]
