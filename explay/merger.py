@@ -19,16 +19,15 @@ def compose(*functions):
 
 class xlConverter:
     def __init__(self, params):
-        self.params = dict(
-            [(e["name"], {k: v for k, v in e.items() if k != "name"}) for e in params]
-        )
+        #  self.params = dict(
+        #  [(e["name"], {k: v for k, v in e.items() if k != "name"}) for e in params]
+        #  )
+        self.params = params
 
     def __repr__(self):
-        msg = "[Converter]\n"
+        msg = f"{self.__class__.__name__}({self.params['name']})\n"
         for name, param in self.params.items():
-            msg += " converter_name: %s\n" % name
-            #  for each in param:
-            #  msg += str(each)
+            msg += f" - {name}: {param}\n"
         return msg
 
     def _load_excel(

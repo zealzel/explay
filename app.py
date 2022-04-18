@@ -7,23 +7,25 @@ pd_set_option(max_colwidth=80, max_columns=15)
 
 home_merge_all = "test/example_projects/merger/merge_all"
 home_merge_sheets = "test/example_projects/merger/merge_sheets"
-home_merge_files = "test/example_projects/merger/merge_files"
+home_merge_files = "test/example_projects_v1/merger/merge_files"
 home_filter_1 = "test/example_projects/filter/case1"
-home_filter_2 = "test/example_projects/filter/case2"
+
+home_filter_2 = "test/example_projects_v1/filter/case2"
+home_yaml = "test/example_projects_v1/yaml/"
 
 
 if __name__ == "__main__":
-    home = home_filter_2
+    home = home_yaml
     proj = "project"
     ee = ExPlay(home=home, proj_name=proj)
     ee.run_proj(to_excel=False)
     ee.export_inputs()
     ee.export_parsers()
 
-    parsers = ee._parsers
+    parser = ee.parsers["parser1"]
     show_rows_max = 10
     with open("out.html", "w") as f:
-        for parser, df in zip(parsers[0]._output, parsers[0]._output.output):
+        for parser, df in zip(parser._output, parser._output.output):
             each_to_show = df[:show_rows_max]
             title = f"<h4>{parser}</h4>"
             #  x = dict(parser.args)

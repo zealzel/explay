@@ -173,15 +173,20 @@ class ExPlay:
         self._rend_params = renderer or None
         self._out_params = out or None
 
-        self._converter = xlConverter(self._conv_params) if converter else None
-        self._parsers = (
-            [
-                xlBinaryParser(defaultdict(str, each_params))
-                for each_params in self._pars_params
-            ]
-            if parser
-            else []
-        )
+        # initialize converters
+        self.converters = {}
+        for k,v in self._conv_params.items():
+            v.update({'name': k})
+            self.converters[k] = xlConverter(v)
+
+        # initialize parsers
+        self.parsers = {}
+        for k,v in self._pars_params.items():
+            parser_init = defaultdict(str)
+            parser_init['name'] = k
+            parser_init['output'] = v
+            self.parsers[k] = xlBinaryParser(parser_init)
+
         self._renderer = xlRenderer(self._rend_params) if renderer else None
         self._template = xlTemplate(self._out_params) if out else None
         if self._proj_params:
@@ -211,11 +216,11 @@ class ExPlay:
             merg_print = yaml.dump(self._merg_params, allow_unicode=True, indent=True)
             print(merg_print)
 
-        if self._parsers:
+        if self.parsers:
             print("************************")
             print("*         parser       *")
             print("************************")
-            for each_parser in self._parsers:
+            for each_parser in self.parsers:
                 print(each_parser, "\n")
 
         if self._renderer:
@@ -319,7 +324,8 @@ class ExPlay:
             del each_proj["name"]
         parser_name = list(each_proj.keys())[0]
         input_name = each_proj[parser_name]
-        parser = [e for e in self._parsers if e.name == parser_name][0]
+        #  parser = [e for e in self._parsers if e.name == parser_name][0]
+        parser = self.parsers[parser_name]
         tp = parser.check_ParserType()
 
         if tp == "binary_parser":
@@ -345,7 +351,8 @@ class ExPlay:
             return temp_result
 
     def run_proj(self, to_excel=True):
-        components = [self._converter, self._merg_params, self._parsers, self._project]
+        #  components = [self._converter, self._merg_params, self._parsers, self._project]
+        components = [self.converters, self._merg_params, self.parsers, self._project]
         if not all(components):
             print("please define all explay components!")
             return
@@ -383,7 +390,7 @@ class ExPlay:
             setattr(__main__, input_name, each_df)
 
     def export_parsers(self):
-        for each_parser in self._parsers:
+        for k, each_parser in self.parsers.items():
             setattr(__main__, each_parser.name, each_parser)
 
 

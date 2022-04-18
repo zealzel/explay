@@ -527,12 +527,13 @@ class xlBinaryParser():
         all_repr = list(filter(lambda x: x, all_repr))
         all_parsers = '\n'.join(all_repr)
 
-        if self.check_ParserType() == 'unary_parser':
-            my_type = '[Unary Parser][%s]' % self.name
-        elif self.check_ParserType() == 'binary_parser':
-            my_type = '[Binary Parser][%s]' % self.name
-        else:
-            raise
+        my_type = f'{self.__class__.__name__}({self.name})'
+        #  if self.check_ParserType() == 'unary_parser':
+            #  my_type = '[Unary Parser][%s]' % self.name
+        #  elif self.check_ParserType() == 'binary_parser':
+            #  my_type = '[Binary Parser][%s]' % self.name
+        #  else:
+            #  raise
         return '%s\n%s' % (my_type, all_parsers)
 
     def __call__(self, left, right=None):
