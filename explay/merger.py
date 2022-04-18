@@ -19,9 +19,6 @@ def compose(*functions):
 
 class xlConverter:
     def __init__(self, params):
-        #  self.params = dict(
-        #  [(e["name"], {k: v for k, v in e.items() if k != "name"}) for e in params]
-        #  )
         self.params = params
 
     def __repr__(self):
@@ -45,7 +42,6 @@ class xlConverter:
                 col_names[i] = name_type[0].strip()
             else:
                 types.append(None)
-
         parse_cols = [c - 1 for c in col_indexes]
         df = pd.read_excel(
             filepath,
@@ -60,27 +56,18 @@ class xlConverter:
         return df, types
 
     def load_excel(self, converter_name, filepath, sheet_name=0, resetindex=True):
-        if type(converter_name) == list:
-            output = []
-            for each in converter_name:
-                first_row = self.params[each]["first_row"]
-                idx_colname = self.params[each]["idx_colname"]
-                df, types = self._load_excel(
-                    filepath, sheet_name, first_row, idx_colname, resetindex
-                )
-                output.append(df)
-        else:
-            first_row = self.params[converter_name]["first_row"]
-            idx_colname = self.params[converter_name]["idx_colname"]
-            df, types = self._load_excel(
-                filepath, sheet_name, first_row, idx_colname, resetindex
-            )
-            output = df
+        first_row = self.params["first_row"]
+        idx_colname = self.params["idx_colname"]
+        print(first_row, idx_colname)
+        df, types = self._load_excel(
+            filepath, sheet_name, first_row, idx_colname, resetindex
+        )
+        output = df
 
-        if "dropna" in self.params[converter_name]:
+        if "dropna" in self.params:
             df.dropna(subset=[self.params[converter_name]["dropna"]], inplace=True)
 
-        if "trim" in self.params[converter_name]:
+        if "trim" in self.params:
             cols_trim = self.params[converter_name]["trim"]
             if type(cols_trim) != list:
                 cols_trim = [cols_trim]
@@ -94,15 +81,19 @@ class xlConverter:
         return output
 
 
-class xlMerger(xlConverter):
-    def __init__(self, params, source_path):
-        xlConverter.__init__(self, params)
+class xlMerger:
+    def __init__(self, name, conv_params, merg_params, source_path):
+        self.name = name
+        self.converter = xlConverter(conv_params)
+        self.params = merg_params
         self.source_path = source_path
 
     def merge_files(self, converter_name, filepaths, sheet_name=0):
         df_all = []
         for filepath in filepaths:
-            df_all.append(self.load_excel(converter_name, filepath, sheet_name))
+            df_all.append(
+                self.converter.load_excel(converter_name, filepath, sheet_name)
+            )
         df = pd.concat(df_all, axis=0)
         df.index = range(len(df))
         return df
@@ -110,7 +101,7 @@ class xlMerger(xlConverter):
     def merge_sheets(self, converter_name, xlsx_path, sheet_names):
         df_list = []
         for sheet_name in sheet_names:
-            df_each = self.load_excel(converter_name, xlsx_path, sheet_name)
+            df_each = self.converter.load_excel(converter_name, xlsx_path, sheet_name)
             df_list.append(df_each)
         df_merged = pd.concat(df_list)
         return df_merged
@@ -126,7 +117,15 @@ class xlMerger(xlConverter):
         df_all = []
         for f in file_names:
             file_path = os.path.join(self.source_path, f)
-            df_all.append(self.load_excel(converter_name, file_path, sheet_name))
+            df_all.append(
+                self.converter.load_excel(converter_name, file_path, sheet_name)
+            )
         df = pd.concat(df_all, axis=0)
         df.index = range(len(df))
         return df, file_names
+
+    def __repr__(self):
+        msg = f"{self.__class__.__name__}({self.name})\n"
+        for name, param in self.params.items():
+            msg += f" - {name}: {param}\n"
+        return msg

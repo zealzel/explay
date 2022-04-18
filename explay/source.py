@@ -159,37 +159,30 @@ class ExPlay:
         yml_file = os.path.join(self.home, f"{proj_name}.yml")
 
         each = yaml.load(open(yml_file, "r"), yaml.Loader)
-        project = each.get("xlproject", None)
-        converter = each.get("xlconverter", None)
-        merger = each.get("xlmerger", None)
-        parser = each.get("xlparser", None)
-        renderer = each.get("xlrenderer", None)
-        out = each.get("xloutput", None)
-
-        self._proj_params = project or None
-        self._conv_params = converter or None
-        self._merg_params = merger or None
-        self._pars_params = parser or None
-        self._rend_params = renderer or None
-        self._out_params = out or None
+        self._proj = each.get("xlproject", None)
+        self._conv = each.get("xlconverter", None)
+        self._merg = each.get("xlmerger", None)
+        self._pars = each.get("xlparser", None)
+        self._rend = each.get("xlrenderer", None)
+        self._out = each.get("xloutput", None)
 
         # initialize converters
         self.converters = {}
-        for k,v in self._conv_params.items():
+        for k,v in self._conv.items():
             v.update({'name': k})
             self.converters[k] = xlConverter(v)
 
         # initialize parsers
         self.parsers = {}
-        for name, param in self._pars_params.items():
+        for name, param in self._pars.items():
             parser_init = defaultdict(str)
             self.parsers[name] = xlParser(name, param)
 
-        self._renderer = xlRenderer(self._rend_params) if renderer else None
-        self._template = xlTemplate(self._out_params) if out else None
-        if self._proj_params:
+        self._renderer = xlRenderer(self._rend) if self._rend else None
+        self._template = xlTemplate(self._out) if self._out else None
+        if self._proj:
             self._project = yaml.dump(
-                self._proj_params, indent=True, default_flow_style=False
+                self._proj, indent=True, default_flow_style=False
             )
         else:
             self._project = None
@@ -207,11 +200,11 @@ class ExPlay:
             print("************************")
             print(self._converter)
 
-        if self._merg_params:
+        if self._merg:
             print("************************")
             print("*         merger       *")
             print("************************")
-            merg_print = yaml.dump(self._merg_params, allow_unicode=True, indent=True)
+            merg_print = yaml.dump(self._merg, allow_unicode=True, indent=True)
             print(merg_print)
 
         if self.parsers:
@@ -240,128 +233,122 @@ class ExPlay:
     def merge_sheets(self, conv_name, xlsx_path, sheet_names, save=False):
         print("sheets of file %s merged." % xlsx_path)
         xlsx_dir = self._get_abs_source_path(xlsx_path)
-        self.merger = xlMerger(self._conv_params, xlsx_dir)
-        df_merged = self.merger.merge_sheets(conv_name, xlsx_dir, sheet_names)
+        #  self.merger = xlMerger(self._conv, xlsx_dir)
+        #  df_merged = self.merger.merge_sheets(conv_name, xlsx_dir, sheet_names)
+        merger = xlMerger(self._conv, xlsx_dir)
+        df_merged = merger.merge_sheets(conv_name, xlsx_dir, sheet_names)
         if save:
             saved_path = "{}/{}_merged.xlsx".format(self.home, conv_name)
             xlRenderer.to_excel(df_merged, saved_path)
-        return df_merged
+        #  return df_merged
+        return merger
 
     def merge_files(self, conv_name, locations, sheet_name=0, save=False):
+        print('merge_files')
         absfilepaths = []
         for each in locations:
             if os.path.isabs(each):
                 absfilepaths.append(each)
             else:
                 absfilepaths.append(os.path.join(os.path.abspath(self.home), each))
-        self.merger = xlMerger(self._conv_params, source_path=self.home)
-        df_merged = self.merger.merge_files(conv_name, absfilepaths, sheet_name)
+        #  self.merger = xlMerger(self._conv, source_path=self.home)
+        #  df_merged = self.merger.merge_files(conv_name, absfilepaths, sheet_name)
+        merger = xlMerger(self._conv[conv_name], source_path=self.home)
+        df_merged = merger.merge_files(conv_name, absfilepaths, sheet_name)
         print("files merged")
         for e in absfilepaths:
             print(e)
         if save:
             saved_path = "{}/{}_merged.xlsx".format(self.home, conv_name)
             xlRenderer.to_excel(df_merged, saved_path)
-        return df_merged
+        #  return df_merged
+        return merger
 
     def merge_all(
         self, conv_name, xlsx_dir=None, sheet_name=0, excludes=None, save=False
     ):
 
         source_path = self._get_abs_source_path(xlsx_dir)
-        self.merger = xlMerger(self._conv_params, source_path)
-        df_merged, file_names = self.merger.merge_all(conv_name, sheet_name, excludes)
+        #  self.merger = xlMerger(self._conv, source_path)
+        #  df_merged, file_names = self.merger.merge_all(conv_name, sheet_name, excludes)
+
+
+        merger = xlMerger(self._conv, source_path)
+        df_merged, file_names = merger.merge_all(conv_name, sheet_name, excludes)
         print("files merged: %s" % ",".join(file_names))
         if save:
             saved_path = "{}/{}_merged.xlsx".format(self.home, conv_name)
             xlRenderer.to_excel(df_merged, saved_path)
         return df_merged
+        #  return merger
 
     def _df_inputs(self):
-        if not self._merg_params:
-            return None
+        assert self._merg
         merged = {}
-        for each_merger in self._merg_params:
-            each = defaultdict(str, each_merger)
+        self.mergers = {}
+        for merger_name, each_merger in self._merg.items():
+            print(merger_name, each_merger)
+            each_merger = defaultdict(str, each_merger)
 
             # shared
-            name, merge_type, converter_name, sheet_name = (
-                each["name"],
-                each["type"],
-                each["converter_name"],
-                each["sheet_name"],
+            output, merge_type, conv_name, sheet_name = (
+                each_merger["output"],
+                each_merger["type"],
+                each_merger["converter_name"],
+                each_merger["sheet_name"],
             )
             sheet_name = sheet_name or 0  # default is the 1st sheet
-
-            # merge_files
-            locations = each["locations"]  # relative or abs
-
-            # merge_sheets
-            xlsx_path = each["xlsx_path"]
-
-            # merge_all
-            xlsx_dir = each["xlsx_dir"]
-            excludes = each["excludes"]
+            conv_params = self._conv[conv_name]
+            merg_params = self._merg[merger_name]
 
             if merge_type == "merge_files":
-                df_merged = self.merge_files(converter_name, locations, sheet_name)
+                locations = each_merger["locations"]  # relative or abs
+                absfilepaths = []
+                for each in locations:
+                    if os.path.isabs(each):
+                        absfilepaths.append(each)
+                    else:
+                        absfilepaths.append(os.path.join(os.path.abspath(self.home), each))
+                merger = xlMerger(merger_name, conv_params, merg_params, source_path=self.home)
+                df_merged = merger.merge_files(conv_name, absfilepaths, sheet_name)
+
             elif merge_type == "merge_sheets":
-                df_merged = self.merge_sheets(
-                    converter_name, xlsx_path, each["sheet_names"]
-                )
+                xlsx_path = each_merger["xlsx_path"]
+                xlsx_dir = self._get_abs_source_path(xlsx_path)
+                merger = xlMerger(merger_name, conv_params, merg_params, source_path=xlsx_dir)
+                df_merged = merger.merge_sheets(conv_name, xlsx_dir, sheet_name)
+
             elif merge_type == "merge_all":
-                xlsx_dir = each["xlsx_dir"]
-                df_merged = self.merge_all(
-                    converter_name, xlsx_dir, sheet_name, excludes
-                )
-            merged[name] = df_merged
+                xlsx_dir = each_merger["xlsx_dir"]
+                excludes = each_merger["excludes"]
+                source_path = self._get_abs_source_path(xlsx_dir)
+                merger = xlMerger(merger_name, conv_params, merg_params, source_path)
+                df_merged = merger.merge_all(conv_name, sheet_name, excludes)
+
+            merger.output = df_merged
+            self.mergers[merger_name] = merger
+            merged[output] = df_merged
         return merged
 
     def _run(self, each_proj):
-        if "name" in each_proj:
-            del each_proj["name"]
-        parser_name = list(each_proj.keys())[0]
-        input_name = each_proj[parser_name]
-        #  parser = [e for e in self._parsers if e.name == parser_name][0]
-        parser = self.parsers[parser_name]
-        #  tp = parser.check_ParserType()
-
-        #  if tp == "binary_parser":
-            #  pass
-            #  node_child = each_proj[node_name]
-            #  left = node_child["left"]
-            #  right = node_child["right"]
-            #  if type(left) == str and left in local_name:
-            #  left_result = _local(left)
-            #  else:
-            #  left_result = self._run(left)
-
-            #  if type(right) == str and right in local_name:
-            #  right_result = _local(right)
-            #  else:
-            #  right_result = self._run(right)
-
-            #  return parser(left_result, right_result)
-
-        #  elif tp == "unary_parser":
+        input_name = each_proj['input']
+        parser = self.parsers[each_proj['parser']]
         df_input = self.inputs[input_name]
-        temp_result = parser(df_input)
-        return temp_result
+        result = parser(df_input)
+        return result
 
     def run_proj(self, to_excel=True):
-        #  components = [self._converter, self._merg_params, self._parsers, self._project]
-        components = [self.converters, self._merg_params, self.parsers, self._project]
+        components = [self.converters, self._merg, self.parsers, self._project]
         if not all(components):
             print("please define all explay components!")
             return
         self.results = {}
-        for each_proj in self._proj_params:
-            print("==== each_proj ====", each_proj)
-            proj_name = each_proj["name"]
+        for proj_name, each_proj in self._proj.items():
+            print("==== each_proj ====", proj_name)
             self.results[proj_name] = self._run(each_proj)
 
         if to_excel:
-            if self._out_params and self._renderer and self._template:
+            if self._out and self._renderer and self._template:
                 self._render_excel()
             else:
                 self._to_excel()

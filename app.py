@@ -11,7 +11,7 @@ home_merge_files = "test/example_projects_v1/merger/merge_files"
 home_filter_1 = "test/example_projects/filter/case1"
 
 home_filter_2 = "test/example_projects_v1/filter/case2"
-home_yaml = "test/example_projects_v1/yaml/"
+home_yaml = "test/example_projects_v2/yaml/"
 
 
 if __name__ == "__main__":
