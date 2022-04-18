@@ -160,7 +160,7 @@ class Extension(UnaryOperation):
         output = []
 
         for index, row in df.iterrows():
-            print(f'index: {index}')
+            #  print(f'index: {index}')
             try:
                 titles = df.columns.tolist()
                 input_dict = dict(zip(titles, row))
