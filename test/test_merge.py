@@ -34,6 +34,6 @@ def test_merge_sheets(exp_merge_sheets):
     assert True
 
 
-#  def test_merge_files(exp_merge_files):
-#  exp_merge_files.run_proj(to_excel=False)
-#  assert True
+def test_merge_files(exp_merge_files):
+    exp_merge_files.run_proj(to_excel=False)
+    assert True

@@ -244,14 +244,18 @@ class ExPlay:
             xlRenderer.to_excel(df_merged, saved_path)
         return df_merged
 
-    def merge_files(
-        self, conv_name, relative_paths, xlsx_dir=None, sheet_name=0, save=False
-    ):
-        source_path = self._get_abs_source_path(xlsx_dir)
-        filepaths = [os.path.join(source_path, f) for f in relative_paths]
-        self.merger = xlMerger(self._conv_params, source_path)
-        df_merged = self.merger.merge_files(conv_name, filepaths, sheet_name)
-        print("files merged:\n%s" % "\n".join(filepaths))
+    def merge_files(self, conv_name, locations, sheet_name=0, save=False):
+        absfilepaths = []
+        for each in locations:
+            if os.path.isabs(each):
+                absfilepaths.append(each)
+            else:
+                absfilepaths.append(os.path.join(os.path.abspath(self.home), each))
+        self.merger = xlMerger(self._conv_params, source_path=self.home)
+        df_merged = self.merger.merge_files(conv_name, absfilepaths, sheet_name)
+        print("files merged")
+        for e in absfilepaths:
+            print(e)
         if save:
             saved_path = "{}/{}_merged.xlsx".format(self.home, conv_name)
             xlRenderer.to_excel(df_merged, saved_path)
@@ -285,7 +289,7 @@ class ExPlay:
                 each["sheet_name"],
             )
             # merge_files
-            location = each["location"]
+            locations = each["locations"]  # relative or abs
 
             # merge_sheets
             xlsx_path = each["xlsx_path"]
@@ -295,9 +299,7 @@ class ExPlay:
             excludes = each["excludes"]
 
             if merge_type == "merge_files":
-                df_merged = self.merge_files(
-                    converter_name, location, xlsx_dir, sheet_name
-                )
+                df_merged = self.merge_files(converter_name, locations, sheet_name)
             elif merge_type == "merge_sheets":
                 df_merged = self.merge_sheets(
                     converter_name, xlsx_path, each["sheet_names"]
