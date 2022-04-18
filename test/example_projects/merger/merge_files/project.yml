@@ -23,12 +23,3 @@ xlmerger:
       "folder2/in2.xlsx"
       # "some_absolute_path",
     ]
-
-
-xlparser:
-  - name: parser1
-    output:
-      - name: action1 
-        type: filter
-        args:
-          title: [name, address, email]

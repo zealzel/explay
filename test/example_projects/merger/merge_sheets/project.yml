@@ -16,11 +16,3 @@ xlmerger:
     converter_name: table1
     xlsx_path: in.xlsx
     sheet_names: [0, 2, 3]
-
-xlparser:
-  - name: parser1
-    output:
-      - name: action1 
-        type: filter
-        args:
-          title: [name, address, email]

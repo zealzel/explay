@@ -16,11 +16,3 @@ xlmerger:
     converter_name: table1
     excludes: [in_ex1.xlsx, in_ex2.xlsx]
     sheet_name: 1
-
-xlparser:
-  - name: parser1
-    output:
-      - name: action1 
-        type: filter
-        args:
-          title: [name, address, email]
