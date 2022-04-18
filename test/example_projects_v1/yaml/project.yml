@@ -27,6 +27,7 @@ xlmerger:
 xlparser:
   parser1:
     - type: group_by
+      name: group by score into four new columns
       args:
         by: [group]
         agg:
@@ -39,12 +40,14 @@ xlparser:
           name_list: [name,list]
 
     - type: extend 
+      name: round the score
       args:
         title: score_mean_int
         type: int
         func: template@{score_mean}
 
     - type: extend
+      name: concat the score related info into a text
       args:
         title: score_stat
         func: template@score average - {score_mean}, score min - {score_min}, score max - {score_max}

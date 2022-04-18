@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import json
+from numpy import add
 import regex
 import datetime
 from collections import defaultdict
@@ -44,13 +45,12 @@ class Operation():
 
     def load(self):
         pass
-    
+
     def __repr__(self):
         operation_type = self.__class__.__name__
-        msg = '[%s][%s]' % (operation_type, self.name)
+        additional = f'({self.name})' if self.name else ''
+        msg = f'{operation_type}{additional}'
         return msg
-
-        #  return '<{}>'.format(self.__class__.__name__)
 
 
 class UnaryOperation(Operation):
@@ -165,7 +165,7 @@ class Extension(UnaryOperation):
                 input_dict = dict(zip(titles, row))
 
                 if func_name.startswith('template@'):
-                    
+
                     input_dict.keys()
                     template_string = func_name[9:]
                     p = regex.compile('{.*?\L<options>.*?}', options=input_dict.keys())
@@ -330,14 +330,14 @@ class Melt(UnaryOperation):
         self.value_vars = args['value_vars'] if args['value_vars'] else None
         self.value_name = args['value_name'] if args['value_name'] else None
         self.var_name = args['var_name'] if args['var_name'] else 'value'
-        
+
     def parse(self, df):
         if 'by_range' in self.value_vars:
             rng = self.value_vars['by_range']
             value_vars = df.columns[rng[0]-1:rng[1]-1]
         elif 'by_name' in self.value_vars:
             pass
-        
+
         result = df.melt(id_vars=self.id_vars,
                  value_vars=value_vars,
                  var_name=self.var_name,
@@ -348,22 +348,22 @@ class Melt(UnaryOperation):
 def melt_parser(op_params):
     item = Melt(op_params)
     return [item]
-        
+
 
 def pivot_parser(op_params):
     item = Pivot(op_params)
     return [item]
-        
+
 
 def sort_parser(op_params):
     item = Sort(op_params)
     return [item]
-        
+
 
 def filter_parser(op_params):
     item = Filter(op_params)
     return [item]
-        
+
 
 def extend_parser(op_params):
     operations = []
@@ -405,7 +405,7 @@ def extend_parser(op_params):
         operations.append(item)
 
     return operations
-        
+
 
 def groupby_parser(op_params):
     item = GroupBy(op_params)
@@ -424,16 +424,16 @@ def join_parser(op_params):
 
 class xlParser():
 
-    def __init__(self, initializer):
-        self._operations = []
+    def __init__(self, name, initializer):
+        self.name = name
         self.output = []
-        self._operations = self.parse_schema(initializer)
-        #  register_func()
+        self._operations = xlParser.parse_schema(initializer)
 
     @classmethod
     def parse_schema(cls, schema):
         _operations = []
         for each_operation in schema:
+            print('each_operation', each_operation)
             op_type = each_operation['type']
             op_args = defaultdict(str, each_operation['args'])
             parsers = {'group_by': groupby_parser,
@@ -460,7 +460,7 @@ class xlParser():
 
     def __repr__(self):
         return '\n'.join([str(e) for e in self._operations])
-        
+
     def __call__(self, left, right=None):
         return self.parse(left, right)
 
@@ -507,7 +507,7 @@ class xlBinaryParser():
         unary_check1 = (not self._left and not self._right)
         unary_check2 = self.num_of_binary_parser(self._output)==0
         binary_check1 = self.num_of_binary_parser(self._output)==1
-        binary_check2 = (self.num_of_binary_parser(self._left) + 
+        binary_check2 = (self.num_of_binary_parser(self._left) +
                          self.num_of_binary_parser(self._right))==0
         if not check1:
             return None

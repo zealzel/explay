@@ -23,11 +23,15 @@ if __name__ == "__main__":
     ee.export_parsers()
 
     parser = ee.parsers["parser1"]
+    df = ee.inputs["df"]
+
     show_rows_max = 10
     with open("out.html", "w") as f:
-        for parser, df in zip(parser._output, parser._output.output):
+        title = f"<h4>Merged input</h4>"
+        html = title + build_table(df, "blue_light", font_size="10px")
+        f.write(html)
+        for parser, df in zip(parser, parser.output):
             each_to_show = df[:show_rows_max]
             title = f"<h4>{parser}</h4>"
-            #  x = dict(parser.args)
             html = title + build_table(each_to_show, "blue_light", font_size="10px")
             f.write(html)

@@ -22,7 +22,7 @@ import pandas as pd
 
 from explay.utils import pd_set_option
 from explay.openpyxl_ext import insert_rows
-from explay.parser import xlBinaryParser
+from explay.parser import xlBinaryParser, xlParser
 from explay.merger import xlMerger, xlConverter
 
 
@@ -181,11 +181,9 @@ class ExPlay:
 
         # initialize parsers
         self.parsers = {}
-        for k,v in self._pars_params.items():
+        for name, param in self._pars_params.items():
             parser_init = defaultdict(str)
-            parser_init['name'] = k
-            parser_init['output'] = v
-            self.parsers[k] = xlBinaryParser(parser_init)
+            self.parsers[name] = xlParser(name, param)
 
         self._renderer = xlRenderer(self._rend_params) if renderer else None
         self._template = xlTemplate(self._out_params) if out else None
@@ -326,10 +324,10 @@ class ExPlay:
         input_name = each_proj[parser_name]
         #  parser = [e for e in self._parsers if e.name == parser_name][0]
         parser = self.parsers[parser_name]
-        tp = parser.check_ParserType()
+        #  tp = parser.check_ParserType()
 
-        if tp == "binary_parser":
-            pass
+        #  if tp == "binary_parser":
+            #  pass
             #  node_child = each_proj[node_name]
             #  left = node_child["left"]
             #  right = node_child["right"]
@@ -345,10 +343,10 @@ class ExPlay:
 
             #  return parser(left_result, right_result)
 
-        elif tp == "unary_parser":
-            df_input = self.inputs[input_name]
-            temp_result = parser(df_input)
-            return temp_result
+        #  elif tp == "unary_parser":
+        df_input = self.inputs[input_name]
+        temp_result = parser(df_input)
+        return temp_result
 
     def run_proj(self, to_excel=True):
         #  components = [self._converter, self._merg_params, self._parsers, self._project]
