@@ -288,6 +288,8 @@ class ExPlay:
                 each["converter_name"],
                 each["sheet_name"],
             )
+            sheet_name = sheet_name or 0  # default is the 1st sheet
+
             # merge_files
             locations = each["locations"]  # relative or abs
 
