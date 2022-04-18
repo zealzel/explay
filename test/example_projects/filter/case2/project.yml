@@ -42,5 +42,9 @@ xlparser:
 
       - type: extend
         args:
+<<<<<<< HEAD
           title: warning
+=======
+          title: score_stat
+>>>>>>> c7bdb2c (1. Add 2nd filter test case)
           func: template@score average - {score_mean}, score min - {score_min}, score max - {score_max}

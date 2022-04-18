@@ -160,7 +160,10 @@ class Extension(UnaryOperation):
         output = []
 
         for index, row in df.iterrows():
+<<<<<<< HEAD
             #  print(f'index: {index}')
+=======
+>>>>>>> c7bdb2c (1. Add 2nd filter test case)
             try:
                 titles = df.columns.tolist()
                 input_dict = dict(zip(titles, row))
