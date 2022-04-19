@@ -4,7 +4,7 @@ from explay.source import ExPlay
 
 @pytest.fixture()
 def exp1():
-    home = "test/example_projects_v2/yaml/"
+    home = "test/v2_example_projects/yaml/"
     exp = ExPlay(home=home, proj_name="project")
     return exp
 

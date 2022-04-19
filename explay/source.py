@@ -176,9 +176,10 @@ class ExPlay:
 
         # initialize parsers
         self.parsers = {}
-        for name, param in self._pars.items():
-            parser_init = defaultdict(str)
-            self.parsers[name] = xlParser(name, param)
+        if self._pars:
+            for name, param in self._pars.items():
+                parser_init = defaultdict(str)
+                self.parsers[name] = xlParser(name, param)
 
         self._renderer = xlRenderer(self._rend) if self._rend else None
         self._template = xlTemplate(self._out) if self._out else None
@@ -317,8 +318,9 @@ class ExPlay:
             elif merge_type == "merge_sheets":
                 xlsx_path = each_merger["xlsx_path"]
                 xlsx_dir = self._get_abs_source_path(xlsx_path)
+                sheet_names = each_merger['sheet_names']
                 merger = xlMerger(merger_name, conv_params, merg_params, source_path=xlsx_dir)
-                df_merged = merger.merge_sheets(conv_name, xlsx_dir, sheet_name)
+                df_merged = merger.merge_sheets(conv_name, xlsx_dir, sheet_names)
 
             elif merge_type == "merge_all":
                 xlsx_dir = each_merger["xlsx_dir"]
@@ -380,11 +382,11 @@ class ExPlay:
         for k, each_parser in self.parsers.items():
             setattr(__main__, each_parser.name, each_parser)
 
-    def export_html(self, projname, show_rows_max = 10):
+    def export_html(self, projname, html_name='out', show_rows_max = 10):
         proj = self._proj[projname]
         input = self.inputs[proj['input']]
         parser = self.parsers[proj['parser']]
-        with open("out.html", "w") as f:
+        with open(f"{html_name}.html", "w") as f:
             title = f"<h4>Merged input</h4>"
             html = title + build_table(input, "blue_light", font_size="10px")
             f.write(html)
