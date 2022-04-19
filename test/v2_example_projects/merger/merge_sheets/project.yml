@@ -1,0 +1,20 @@
+xlproject:
+  proj_merge_sheets:
+    input: df
+    parser: parser1
+
+xlconverter:
+  table1:
+    first_row: 3
+    idx_colname:
+      3: name
+      4: address
+      5: email
+
+xlmerger:
+  merger1:
+    type: merge_sheets
+    name: df
+    converter_name: table1
+    xlsx_path: in.xlsx
+    sheet_names: [0, 2, 3]

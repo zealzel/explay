@@ -1,0 +1,20 @@
+xlproject:
+  proj_merge_all:
+    input: df
+    parser: parser1
+
+xlconverter:
+  table1:
+    first_row: 3
+    idx_colname:
+      3: name
+      4: address
+      5: email
+
+xlmerger:
+  merger1:
+    type: merge_all
+    name: df
+    converter_name: table1
+    excludes: [in_ex1.xlsx, in_ex2.xlsx]
+    sheet_name: 1
