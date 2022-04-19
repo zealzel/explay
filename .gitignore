@@ -3,6 +3,7 @@ inbox/
 archives/
 examples/
 test/example_private/
+test/v2_example_private/
 .mypy_cache/
 *.txt
 .pypirc

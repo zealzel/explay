@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import os
 import yaml
+import json
 import __main__
 from copy import copy
 import datetime
@@ -13,16 +14,17 @@ from collections import defaultdict
 import functools
 
 import xlrd
+import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill
+from pretty_html_table import build_table
 
-import pandas as pd
 
 from explay.utils import pd_set_option
 from explay.openpyxl_ext import insert_rows
-from explay.parser import xlBinaryParser, xlParser
+from explay.parser import xlParser
 from explay.merger import xlMerger, xlConverter
 
 
@@ -378,20 +380,22 @@ class ExPlay:
         for k, each_parser in self.parsers.items():
             setattr(__main__, each_parser.name, each_parser)
 
-
-if __name__ == "__main__":
-
-    ee = ExPlay()
-    ee.export(locals())
-    #  conv, pars, inputs = ee.run()
-
-    #  for name, each_df in inputs.items():
-    #  locals()[name] = each_df
-
-    x1 = ACTION1(df, df_gender)
-    x2 = ACTION2(x1, df_code)
-    DF = ACTION3(ACTION1._output.output[0], x2)
-
-    #  x1 = pars[2](df, df_gender)
-    #  x2 = pars[1](x1, df_code)
-    #  DF = pars[0](pars[2]._output.output[0], x2)
+    def export_html(self, projname, show_rows_max = 10):
+        proj = self._proj[projname]
+        input = self.inputs[proj['input']]
+        parser = self.parsers[proj['parser']]
+        with open("out.html", "w") as f:
+            title = f"<h4>Merged input</h4>"
+            html = title + build_table(input, "blue_light", font_size="10px")
+            f.write(html)
+            for parser, df in zip(parser, parser.output):
+                print("parser --->", parser)
+                details = json.dumps(dict(parser.params["args"]), ensure_ascii=False)
+                each_to_show = df[:show_rows_max]
+                title = f"<h4>{parser}</h4>"
+                html = (
+                    title
+                    + details
+                    + build_table(each_to_show, "blue_light", font_size="10px")
+                )
+                f.write(html)

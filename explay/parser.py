@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import json
+import copy
 from numpy import add
 import regex
 import datetime
@@ -39,7 +40,7 @@ class Operation():
     def __init__(self, params):
         self.params = params
         self.type = params['type']
-        self.args = params['args']
+        self.args = copy.deepcopy(params['args'])
         self.name = params['name'] if 'name' in params else ''
         self.load()
 
@@ -433,7 +434,6 @@ class xlParser():
     def parse_schema(cls, schema):
         _operations = []
         for each_operation in schema:
-            print('each_operation', each_operation)
             op_type = each_operation['type']
             op_args = defaultdict(str, each_operation['args'])
             parsers = {'group_by': groupby_parser,
@@ -484,80 +484,80 @@ class xlParser():
             print(each.head(num_for_each), '\n\n')
 
 
-class xlBinaryParser():
+#  class xlBinaryParser():
 
-    def __init__(self, binary_initializer):
-        self.name = binary_initializer['name']
-        left = binary_initializer['left']
-        right = binary_initializer['right']
-        output = binary_initializer['output']
-        self._left = xlParser(left)
-        self._right = xlParser(right)
-        self._output = xlParser(output)
+    #  def __init__(self, binary_initializer):
+        #  self.name = binary_initializer['name']
+        #  left = binary_initializer['left']
+        #  right = binary_initializer['right']
+        #  output = binary_initializer['output']
+        #  self._left = xlParser(left)
+        #  self._right = xlParser(right)
+        #  self._output = xlParser(output)
 
-    def num_of_binary_parser(self, operations):
-        op_basetype = lambda op: op.__class__.__bases__[0]
-        op_basetypes = [op_basetype(o) for o in operations]
-        num = len(list(filter(lambda o: o==BinaryOperation, op_basetypes)))
-        return num
+    #  def num_of_binary_parser(self, operations):
+        #  op_basetype = lambda op: op.__class__.__bases__[0]
+        #  op_basetypes = [op_basetype(o) for o in operations]
+        #  num = len(list(filter(lambda o: o==BinaryOperation, op_basetypes)))
+        #  return num
 
-    def check_ParserType(self):
-        baseclass = self._output[0].__class__.__bases__[0]
-        check1 = self._output is not None
-        unary_check1 = (not self._left and not self._right)
-        unary_check2 = self.num_of_binary_parser(self._output)==0
-        binary_check1 = self.num_of_binary_parser(self._output)==1
-        binary_check2 = (self.num_of_binary_parser(self._left) +
-                         self.num_of_binary_parser(self._right))==0
-        if not check1:
-            return None
-        elif unary_check1 and unary_check2:
-            return 'unary_parser'
-        elif binary_check1 and binary_check2:
-            return 'binary_parser'
+    #  def check_ParserType(self):
+        #  baseclass = self._output[0].__class__.__bases__[0]
+        #  check1 = self._output is not None
+        #  unary_check1 = (not self._left and not self._right)
+        #  unary_check2 = self.num_of_binary_parser(self._output)==0
+        #  binary_check1 = self.num_of_binary_parser(self._output)==1
+        #  binary_check2 = (self.num_of_binary_parser(self._left) +
+                         #  self.num_of_binary_parser(self._right))==0
+        #  if not check1:
+            #  return None
+        #  elif unary_check1 and unary_check2:
+            #  return 'unary_parser'
+        #  elif binary_check1 and binary_check2:
+            #  return 'binary_parser'
 
-    def __repr__(self):
-        left_ops = '\n'.join([' %s' % e for e in self._left])
-        right_ops = '\n'.join([' %s' % e for e in self._right])
-        output_ops = '\n'.join([' %s' % e for e in self._output])
-        left_repr = '[left]\n%s' % left_ops if left_ops else ''
-        right_repr = '[right]\n%s' % right_ops if right_ops else ''
-        output_repr = '[output]\n%s' % output_ops
-        all_repr = [left_repr, right_repr, output_repr]
-        all_repr = list(filter(lambda x: x, all_repr))
-        all_parsers = '\n'.join(all_repr)
+    #  def __repr__(self):
+        #  left_ops = '\n'.join([' %s' % e for e in self._left])
+        #  right_ops = '\n'.join([' %s' % e for e in self._right])
+        #  output_ops = '\n'.join([' %s' % e for e in self._output])
+        #  left_repr = '[left]\n%s' % left_ops if left_ops else ''
+        #  right_repr = '[right]\n%s' % right_ops if right_ops else ''
+        #  output_repr = '[output]\n%s' % output_ops
+        #  all_repr = [left_repr, right_repr, output_repr]
+        #  all_repr = list(filter(lambda x: x, all_repr))
+        #  all_parsers = '\n'.join(all_repr)
 
-        my_type = f'{self.__class__.__name__}({self.name})'
+        #  my_type = f'{self.__class__.__name__}({self.name})'
+        #  #  if self.check_ParserType() == 'unary_parser':
+            #  #  my_type = '[Unary Parser][%s]' % self.name
+        #  #  elif self.check_ParserType() == 'binary_parser':
+            #  #  my_type = '[Binary Parser][%s]' % self.name
+        #  #  else:
+            #  #  raise
+        #  return '%s\n%s' % (my_type, all_parsers)
+
+    #  def __call__(self, left, right=None):
+        #  return self.parse(left, right)
+
+    #  def parse(self, left, right=None):
+        #  if not self._left:
+            #  print('no left!')
+        #  if not self._right:
+            #  print('no right!')
+
         #  if self.check_ParserType() == 'unary_parser':
-            #  my_type = '[Unary Parser][%s]' % self.name
-        #  elif self.check_ParserType() == 'binary_parser':
-            #  my_type = '[Binary Parser][%s]' % self.name
+            #  output = self._output(left)
         #  else:
-            #  raise
-        return '%s\n%s' % (my_type, all_parsers)
+            #  left_output = self._left.parse(left) if self._left else left
+            #  right_output = self._right.parse(right) if self._right else right
+            #  output = self._output.parse(left_output, right_output)
 
-    def __call__(self, left, right=None):
-        return self.parse(left, right)
+        #  return output
 
-    def parse(self, left, right=None):
-        if not self._left:
-            print('no left!')
-        if not self._right:
-            print('no right!')
-
-        if self.check_ParserType() == 'unary_parser':
-            output = self._output(left)
-        else:
-            left_output = self._left.parse(left) if self._left else left
-            right_output = self._right.parse(right) if self._right else right
-            output = self._output.parse(left_output, right_output)
-
-        return output
-
-    def show_outputs(self, num_for_each=5):
-        print('[LEFT]')
-        self._left.show_outputs(num_for_each)
-        print('[RIGHT]')
-        self._right.show_outputs(num_for_each)
-        print('[OUTPUT]')
-        self._output.show_outputs(num_for_each)
+    #  def show_outputs(self, num_for_each=5):
+        #  print('[LEFT]')
+        #  self._left.show_outputs(num_for_each)
+        #  print('[RIGHT]')
+        #  self._right.show_outputs(num_for_each)
+        #  print('[OUTPUT]')
+        #  self._output.show_outputs(num_for_each)

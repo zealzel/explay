@@ -65,10 +65,10 @@ class xlConverter:
         output = df
 
         if "dropna" in self.params:
-            df.dropna(subset=[self.params[converter_name]["dropna"]], inplace=True)
+            df.dropna(subset=[self.params["dropna"]], inplace=True)
 
         if "trim" in self.params:
-            cols_trim = self.params[converter_name]["trim"]
+            cols_trim = self.params["trim"]
             if type(cols_trim) != list:
                 cols_trim = [cols_trim]
             df[cols_trim] = df[cols_trim].applymap(lambda x: str(x).strip())
