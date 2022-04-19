@@ -71,7 +71,6 @@ class Sort(Operation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        #  print('Sort load')
         self.values = self.args['values']
 
     def parse(self, df):
@@ -85,7 +84,6 @@ class GroupBy(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        #  print('Groupby load')
         self.by = self.args['by']
         self.agg = self.args['agg']
         self.eval_func()
@@ -145,7 +143,6 @@ class Extension(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        #  print('Extension load')
         args = self.params['args']
         self.title = args['title']
         self.output_type = args['type']
@@ -186,7 +183,6 @@ class Extension(UnaryOperation):
                         for group in grouped:
                             span = group.span()
                             matched = group.group()
-                            #  print('matched: %s' % matched)
                             value = eval(matched[1:-1])
                             values.append(value)
                         each_output = replace_str(template_string, spans, values)
@@ -231,7 +227,6 @@ class Join(BinaryOperation):
         BinaryOperation.__init__(self, params)
 
     def load(self):
-        #  print('Join load')
         args = self.params['args']
         self.on = args['join_on']
         self.how = args['how']
@@ -272,7 +267,6 @@ class Filter(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        #  print('Filter load')
         args = self.params['args']
         self.title = args['title']
         self.condition = args['condition']
@@ -305,7 +299,6 @@ class Pivot(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        #  print('Pivot load')
         args = self.params['args']
         self.index = args['index']
         self.columns = args['columns']
@@ -325,7 +318,6 @@ class Melt(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        #  print('Melt load')
         args = self.params['args']
         self.id_vars = args['id_vars'] if args['id_vars'] else None
         self.value_vars = args['value_vars'] if args['value_vars'] else None

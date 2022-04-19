@@ -1,26 +1,22 @@
-#  from distutils.core import setup
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
-    name = 'explay_testr',
-    packages = ['explay'],
-    scripts = ['bin/exp'],
-    version = '0.4.0',
-    description = 'make excel jobs playful again',
-    author = 'zealzel',
-    author_email = 'zealzel@gmail.com',
-    url = 'https://github.com/zealzel/explay',
-    download_url = 'https://github.com/zealzel/explay/tarball/v0.4.0',
-    #  keywords = ['pandas', 'openpyxl', 'fire'],
-    #  classifiers = [],
+    name="explay",
+    packages=["explay"],
+    scripts=["bin/exp"],
+    version="0.5.0",
+    description="make excel jobs playful again",
+    author="zealzel",
+    author_email="zealzel@gmail.com",
+    url="https://github.com/zealzel/explay",
     install_requires=[
-        'pandas',
-        'openpyxl',
-        'regex',
-        'fire',
-        'XlsxWriter',
-        'numpy',
-        'xlrd',
-        'pyyaml',
-    ]
+        "pandas",
+        "openpyxl",
+        "regex",
+        "fire",
+        "XlsxWriter",
+        "numpy",
+        "xlrd",
+        "pyyaml",
+    ],
 )

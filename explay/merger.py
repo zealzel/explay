@@ -58,7 +58,6 @@ class xlConverter:
     def load_excel(self, converter_name, filepath, sheet_name=0, resetindex=True):
         first_row = self.params["first_row"]
         idx_colname = self.params["idx_colname"]
-        print(first_row, idx_colname)
         df, types = self._load_excel(
             filepath, sheet_name, first_row, idx_colname, resetindex
         )

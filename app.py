@@ -12,13 +12,14 @@ home_merge_files = "test/example_projects_v1/merger/merge_files"
 home_filter_1 = "test/example_projects/filter/case1"
 
 home_yaml = "test/v2_example_projects/yaml/"
+home_2p = "test/v2_example_private/hr-bonus-2p/"
 
 
 if __name__ == "__main__":
-    home = home_yaml
+    home = home_2p
     proj = "project"
     ee = ExPlay(home=home, proj_name=proj)
-    ee.run_proj(to_excel=False)
+    ee.run_proj(to_excel=True)
     ee.export_inputs()
     ee.export_parsers()
-    ee.export_html(projname="proj1")
+    ee.export_html(projname="excel")

@@ -36,7 +36,8 @@ def compose(*functions):
 
 
 class xlRenderer:
-    def __init__(self, params):
+    def __init__(self, home, params):
+        self.home = home
         self.params = params
         self.first_row, self.idx_colname = params["first_row"], params["idx_colname"]
 
@@ -77,13 +78,18 @@ class xlRenderer:
         xls_file, xlsx_file = [
             "%s/%s.%s" % (template_dir, template_name, ext) for ext in ["xls", "xlsx"]
         ]
+        xlsx_file = os.path.join(self.home, xlsx_file)
+        xls_file = os.path.join(self.home, xls_file)
+
         template = load_workbook(xlsx_file)
 
-        rows = dataframe_to_rows(df, index=True, header=False)
+        #  rows = dataframe_to_rows(df, index=True, header=False)
+        rows = dataframe_to_rows(df, index=False, header=False)
+
         ws = template.active
         ws.insert_rows = insert_rows
-
         ws.insert_rows(ws, self.first_row, len(df))
+
         xls_from = xlrd.open_workbook(xls_file, formatting_info=True)
         xls_sheet = xls_from.sheet_by_index(0)
         color_index = lambda row, col: (
@@ -101,11 +107,14 @@ class xlRenderer:
         for r_idx, row in enumerate(rows, self.first_row):
             for c_idx, df_colname in self.idx_colname.items():
                 col_idx = df.columns.get_loc(df_colname)
-                get_cell(ws, r_idx, c_idx).value = row[col_idx + 1]
+                #  get_cell(ws, r_idx, c_idx).value = row[col_idx + 1]
+                get_cell(ws, r_idx, c_idx).value = row[col_idx]
 
         for row in ws.rows:
             max_contents_len = []
             for cell in row:
+                if not hasattr(cell, 'col_idx'):
+                    continue 
                 r_idx, c_idx = cell.row, cell.col_idx
 
                 max_content_len = len(str(get_cell(ws, r_idx, c_idx)))
@@ -133,6 +142,9 @@ class xlRenderer:
                 new_cell.protection = copy(cell.protection)
                 new_cell.alignment = copy(cell.alignment)
 
+        saved_name = os.path.join(self.home, saved_name)
+        if not os.path.isdir(saved_name):
+            os.makedirs(os.path.dirname(saved_name), exist_ok=True)
         template.save(saved_name)
         print("{} saved".format(saved_name))
 
@@ -181,7 +193,8 @@ class ExPlay:
                 parser_init = defaultdict(str)
                 self.parsers[name] = xlParser(name, param)
 
-        self._renderer = xlRenderer(self._rend) if self._rend else None
+        #  self._renderer = xlRenderer(self._rend) if self._rend else None
+        self._renderer = xlRenderer(self.home, self._rend) if self._rend else None
         self._template = xlTemplate(self._out) if self._out else None
         if self._proj:
             self._project = yaml.dump(
@@ -290,7 +303,6 @@ class ExPlay:
         merged = {}
         self.mergers = {}
         for merger_name, each_merger in self._merg.items():
-            print(merger_name, each_merger)
             each_merger = defaultdict(str, each_merger)
 
             # shared
@@ -391,7 +403,6 @@ class ExPlay:
             html = title + build_table(input, "blue_light", font_size="10px")
             f.write(html)
             for parser, df in zip(parser, parser.output):
-                print("parser --->", parser)
                 details = json.dumps(dict(parser.params["args"]), ensure_ascii=False)
                 each_to_show = df[:show_rows_max]
                 title = f"<h4>{parser}</h4>"
