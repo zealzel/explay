@@ -26,8 +26,20 @@ home = "/Users/zealzel/Downloads/My/code/執勤注意力各月清冊"
 
 
 if __name__ == "__main__":
-    home = home_filter_2
-    proj = "project"
+
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--home", type=str, help="project home directory", default="")
+    parser.add_argument("--proj", type=str, help="project name", default="project")
+    args = parser.parse_args()
+
+    #  home = home_filter_2
+    #  proj = "project"
+
+    home = args.home
+    proj = args.proj
+
     register_func(home)
     ee = ExPlay(home=home, proj_name=proj)
     ee.run_proj(to_excel=False)
