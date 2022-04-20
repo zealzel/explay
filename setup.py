@@ -18,5 +18,6 @@ setup(
         "numpy",
         "xlrd",
         "pyyaml",
+        "pretty_html_table",
     ],
 )

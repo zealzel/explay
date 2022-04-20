@@ -1,4 +1,8 @@
+import os
+import sys
+import shutil
 import json
+from pathlib import Path
 from explay.source import ExPlay
 from explay.utils import pd_set_option
 from pretty_html_table import build_table
@@ -40,10 +44,13 @@ if __name__ == "__main__":
     home = args.home
     proj = args.proj
 
-    register_func(home)
-    ee = ExPlay(home=home, proj_name=proj)
+    workdir = str(Path(home).resolve())
+    register_func(workdir)
+    ee = ExPlay(home=workdir, proj_name=proj)
     ee.run_proj(to_excel=False)
     ee.export_inputs()
+
+    ee.inputs["df"].to_excel("output.xlsx")
 
     #  ee.inputs["df"].to_excel("out.xlsx")
     #  ee.export_parsers()

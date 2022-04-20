@@ -15,7 +15,8 @@ import functools
 
 import pandas as pd
 
-from explay.utils import is_buildin, replace_str, register_func
+#  from explay.utils import is_buildin, replace_str, register_func
+from explay.utils import is_buildin, replace_str
 
 from explay.agg_func import agg_functions
 from explay.post_func import common_funcs
