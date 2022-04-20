@@ -163,7 +163,6 @@ class Extension(UnaryOperation):
                 input_dict = dict(zip(titles, row))
 
                 if func_name.startswith("template@"):
-
                     input_dict.keys()
                     template_string = func_name[9:]
                     p = regex.compile("{.*?\L<options>.*?}", options=input_dict.keys())
@@ -464,7 +463,7 @@ class xlParser:
         return self.parse(left, right)
 
     def parse(self, left, right=None):
-        register_func()
+        #  register_func()
         df = left
         for i, each_op in enumerate(self._operations):
             print(i, each_op)

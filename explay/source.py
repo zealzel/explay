@@ -374,6 +374,9 @@ class ExPlay:
                 print(result.head(10))
 
     def _to_excel(self):
+        if not self._renderer:
+            print('no renderer found.')
+            return
         for proj_name, each_result in self.results.items():
             self._renderer.to_excel(each_result, "out_{}.xlsx".format(proj_name))
 

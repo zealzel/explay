@@ -34,14 +34,3 @@ xlparser:
           score_mean: [score, mean]
           score_std: [score, std]
           name_list: [name,list]
-
-    - type: extend 
-      args:
-        title: score_mean_int
-        type: int
-        func: template@{score_mean}
-
-    - type: extend
-      args:
-        title: score_stat
-        func: template@score average - {score_mean}, score min - {score_min}, score max - {score_max}

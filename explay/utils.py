@@ -1,3 +1,7 @@
+import os
+import sys
+import shutil
+import importlib
 from collections import defaultdict
 import yaml
 
@@ -33,13 +37,29 @@ def register_custom_func(name, func):
     common_funcs[name] = func
 
 
-def register_func():
-    import func
+def register_func(workdir):
+    cwd = os.getcwd()
+    print("cwd", cwd)
+    print("workdir", workdir)
 
-    funcs = [f for f in dir(func) if f.startswith("exp")]
+    func_temp_name = workdir.replace("/", "__") + "__func_temp"
+    func_temp_py = f"{func_temp_name}.py"
+    print("func_temp_name", func_temp_name)
+
+    if not os.path.isfile(os.path.join(workdir, "func.py")):
+        return
+
+    shutil.copy(os.path.join(workdir, "func.py"), os.path.join(cwd, func_temp_py))
+    func_temp = importlib.import_module(func_temp_name)
+    print(func_temp)
+
+    funcs = [f for f in dir(func_temp) if f.startswith("exp")]
     for func_name in funcs:
+        print("func_name", func_name)
         func_name_in_yml = func_name[4:]
-        register_custom_func(func_name_in_yml, getattr(func, func_name))
+        register_custom_func(func_name_in_yml, getattr(func_temp, func_name))
+    os.chdir(cwd)
+    os.remove(func_temp_py)
 
 
 def to_yml(files, set_defualtdict=False, default_type=str):
