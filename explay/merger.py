@@ -119,9 +119,10 @@ class xlMerger:
             df_all.append(
                 self.converter.load_excel(converter_name, file_path, sheet_name)
             )
-        df = pd.concat(df_all, axis=0)
-        df.index = range(len(df))
-        return df, file_names
+        df_merged = pd.concat(df_all, axis=0)
+        df_merged.index = range(len(df_merged))
+        #  return df, file_names
+        return df_merged
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}({self.name})\n"

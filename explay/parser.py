@@ -49,21 +49,21 @@ class Operation():
 
     def __repr__(self):
         operation_type = self.__class__.__name__
-        additional = f'({self.name})' if self.name else ''
-        msg = f'{operation_type}{additional}'
+        additional = f"({self.name})" if self.name else ""
+        msg = f"{operation_type}{additional}"
         return msg
 
 
 class UnaryOperation(Operation):
     def __init__(self, params):
         Operation.__init__(self, params)
-        self.op_type = 'unary'
+        self.op_type = "unary"
 
 
 class BinaryOperation(Operation):
     def __init__(self, params):
         Operation.__init__(self, params)
-        self.op_type = 'binary'
+        self.op_type = "binary"
 
 
 class Sort(Operation):
@@ -71,7 +71,7 @@ class Sort(Operation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        self.values = self.args['values']
+        self.values = self.args["values"]
 
     def parse(self, df):
         sort_values = self.values
@@ -143,10 +143,10 @@ class Extension(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        args = self.params['args']
-        self.title = args['title']
-        self.output_type = args['type']
-        self.func = args['func']
+        args = self.params["args"]
+        self.title = args["title"]
+        self.output_type = args["type"]
+        self.func = args["func"]
 
     def parse(self, df):
         func_name = self.func
@@ -162,11 +162,11 @@ class Extension(UnaryOperation):
                 titles = df.columns.tolist()
                 input_dict = dict(zip(titles, row))
 
-                if func_name.startswith('template@'):
+                if func_name.startswith("template@"):
 
                     input_dict.keys()
                     template_string = func_name[9:]
-                    p = regex.compile('{.*?\L<options>.*?}', options=input_dict.keys())
+                    p = regex.compile("{.*?\L<options>.*?}", options=input_dict.keys())
                     grouped = [m for m in p.finditer(template_string)]
                     spans = [list(g.span()) for g in grouped]
 
@@ -187,15 +187,19 @@ class Extension(UnaryOperation):
                             values.append(value)
                         each_output = replace_str(template_string, spans, values)
 
-                        cast_datetime = rpartial(datetime.datetime.strptime, '%Y-%m-%d %H:%M:%S')
+                        cast_datetime = rpartial(
+                            datetime.datetime.strptime, "%Y-%m-%d %H:%M:%S"
+                        )
 
                         if self.output_type:
-                            cast = {'int': compose(int, float),
-                                    'float': float,
-                                    'list': json.loads,
-                                    'str': str,
-                                    'datetime': cast_datetime}
-                            if self.output_type== 'list':
+                            cast = {
+                                "int": compose(int, float),
+                                "float": float,
+                                "list": json.loads,
+                                "str": str,
+                                "datetime": cast_datetime,
+                            }
+                            if self.output_type == "list":
                                 each_output = each_output.replace("'", '"')
                             #  if index==119:
                                 #  __import__('ipdb').set_trace()
@@ -204,10 +208,10 @@ class Extension(UnaryOperation):
                     func = global_func[func_name]
                     sig = inspect.signature(func)
                     arg_names = list(sig.parameters)
-                    if len(arg_names)==1:
+                    if len(arg_names) == 1:
                         inputs = {arg_names[0]: input_dict[input[0]]}
                     else:
-                        inputs = {k:v for k,v in input_dict.items() if k in arg_names}
+                        inputs = {k: v for k, v in input_dict.items() if k in arg_names}
                     each_output = func(**inputs)
 
                 output.append(each_output)
@@ -217,7 +221,7 @@ class Extension(UnaryOperation):
                 import pdb; pdb.set_trace()
                 #  raise AssertionError
 
-        df_ext = pd.DataFrame({self.title: output}, index = df.index)
+        df_ext = pd.DataFrame({self.title: output}, index=df.index)
         df_output = pd.concat((df_output, df_ext), axis=1)
         return df_output
 
@@ -227,11 +231,11 @@ class Join(BinaryOperation):
         BinaryOperation.__init__(self, params)
 
     def load(self):
-        args = self.params['args']
-        self.on = args['join_on']
-        self.how = args['how']
-        self.right_cols = args['right_cols']
-        self.left_fillna = args['left_fillna']
+        args = self.params["args"]
+        self.on = args["join_on"]
+        self.how = args["how"]
+        self.right_cols = args["right_cols"]
+        self.left_fillna = args["left_fillna"]
 
     def parse(self, left, right):
         if self.right_cols:
@@ -252,11 +256,11 @@ class Condition():
         self.value = value
 
     def query(self, df):
-        if self.op in ['==', 'eq']:
+        if self.op in ["==", "eq"]:
             new_df = df[df.apply(lambda x: x[self.var] == self.value, axis=1)]
-        elif self.op == 'in':
+        elif self.op == "in":
             new_df = df[df.apply(lambda x: x[self.var] in self.value, axis=1)]
-        elif self.op == 'not_in':
+        elif self.op == "not_in":
             new_df = df[df.apply(lambda x: x[self.var] not in self.value, axis=1)]
 
         return new_df
@@ -267,23 +271,23 @@ class Filter(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        args = self.params['args']
-        self.title = args['title']
-        self.condition = args['condition']
+        args = self.params["args"]
+        self.title = args["title"]
+        self.condition = args["condition"]
 
     def parse(self, df):
         if self.condition:
-            cond_type = self.condition['type']
-            items = self.condition['items']
+            cond_type = self.condition["type"]
+            items = self.condition["items"]
             conditions = [Condition(*item) for item in items]
-            if cond_type == 'once':
+            if cond_type == "once":
                 one_cond = conditions[0]
                 result = one_cond.query(df)
 
-            elif cond_type == 'and':
+            elif cond_type == "and":
                 pass
 
-            elif cond_type == 'or':
+            elif cond_type == "or":
                 pass
         else:
             result = df
@@ -299,11 +303,11 @@ class Pivot(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        args = self.params['args']
-        self.index = args['index']
-        self.columns = args['columns']
-        self.values = args['values']
-        self.reset_index = args['reset_index']
+        args = self.params["args"]
+        self.index = args["index"]
+        self.columns = args["columns"]
+        self.values = args["values"]
+        self.reset_index = args["reset_index"]
 
     def parse(self, df):
         index = self.index
@@ -318,23 +322,25 @@ class Melt(UnaryOperation):
         UnaryOperation.__init__(self, params)
 
     def load(self):
-        args = self.params['args']
-        self.id_vars = args['id_vars'] if args['id_vars'] else None
-        self.value_vars = args['value_vars'] if args['value_vars'] else None
-        self.value_name = args['value_name'] if args['value_name'] else None
-        self.var_name = args['var_name'] if args['var_name'] else 'value'
+        args = self.params["args"]
+        self.id_vars = args["id_vars"] if args["id_vars"] else None
+        self.value_vars = args["value_vars"] if args["value_vars"] else None
+        self.value_name = args["value_name"] if args["value_name"] else None
+        self.var_name = args["var_name"] if args["var_name"] else "value"
 
     def parse(self, df):
-        if 'by_range' in self.value_vars:
-            rng = self.value_vars['by_range']
-            value_vars = df.columns[rng[0]-1:rng[1]-1]
-        elif 'by_name' in self.value_vars:
+        if "by_range" in self.value_vars:
+            rng = self.value_vars["by_range"]
+            value_vars = df.columns[rng[0] - 1 : rng[1] - 1]
+        elif "by_name" in self.value_vars:
             pass
 
-        result = df.melt(id_vars=self.id_vars,
-                 value_vars=value_vars,
-                 var_name=self.var_name,
-                 value_name=self.value_name)
+        result = df.melt(
+            id_vars=self.id_vars,
+            value_vars=value_vars,
+            var_name=self.var_name,
+            value_name=self.value_name,
+        )
         return result
 
 
@@ -360,41 +366,42 @@ def filter_parser(op_params):
 
 def extend_parser(op_params):
     operations = []
-    op_args = op_params['args']
-    arg_title = op_args['title']
-    arg_title = [arg_title] if type(arg_title)==str else arg_title
-    arg_funcs = [e.rstrip() for e in op_args['func'].split('@')]
-    len_title, len_func = len(arg_title), len(arg_funcs)-1
+    op_args = op_params["args"]
+    arg_title = op_args["title"]
+    arg_title = [arg_title] if type(arg_title) == str else arg_title
+    arg_funcs = [e.rstrip() for e in op_args["func"].split("@")]
+    len_title, len_func = len(arg_title), len(arg_funcs) - 1
 
-    if 'type' not in op_args:
-        arg_types = [''] * len_title
+    if "type" not in op_args:
+        arg_types = [""] * len_title
     else:
-        arg_types = op_args['type']
-        arg_types = [arg_types] if type(arg_types)==str else arg_types
+        arg_types = op_args["type"]
+        arg_types = [arg_types] if type(arg_types) == str else arg_types
 
     len_type = len(arg_types)
 
     if len_title != len_func:
-        raise Exception('ProcessError',
-            'number of extension functions must be pairsed with titles!')
+        raise Exception(
+            "ProcessError", "number of extension functions must be pairsed with titles!"
+        )
 
     elif len_title != len_type:
-        raise Exception('ProcessError',
-            'number of extension types must be pairsed with titles!')
+        raise Exception(
+            "ProcessError", "number of extension types must be pairsed with titles!"
+        )
 
-    elif arg_funcs[0] != 'template':
-        raise Exception('ProcessError', 'Extension Format not matched!')
+    elif arg_funcs[0] != "template":
+        raise Exception("ProcessError", "Extension Format not matched!")
 
     each_op_args = defaultdict(str)
 
     each_params = op_params.copy()
     for arg_title, arg_func, arg_type in zip(arg_title, arg_funcs[1:], arg_types):
-        each_op_args['title'] = arg_title
-        each_op_args['func'] = 'template@{}'.format(arg_func)
-        each_op_args['type'] = arg_type
-
-        each_params['args'] = each_op_args
-        item = Extension(each_params)
+        each_op_args["title"] = arg_title
+        each_op_args["func"] = "template@{}".format(arg_func)
+        each_op_args["type"] = arg_type
+        each_params["args"] = each_op_args
+        item = Extension(copy.deepcopy(each_params)) # added 2022/4/20
         operations.append(item)
 
     return operations
@@ -415,8 +422,7 @@ def join_parser(op_params):
     return [item]
 
 
-class xlParser():
-
+class xlParser:
     def __init__(self, name, initializer):
         self.name = name
         self.output = []
@@ -426,21 +432,22 @@ class xlParser():
     def parse_schema(cls, schema):
         _operations = []
         for each_operation in schema:
-            op_type = each_operation['type']
-            op_args = defaultdict(str, each_operation['args'])
-            parsers = {'group_by': groupby_parser,
-                       'extend': extend_parser,
-                       'trim': trim_parser,
-                       'join': join_parser,
-                       'filter': filter_parser,
-                       'melt': melt_parser,
-                       'pivot': pivot_parser,
-                       'sort': sort_parser,
-                      }
+            op_type = each_operation["type"]
+            op_args = defaultdict(str, each_operation["args"])
+            parsers = {
+                "group_by": groupby_parser,
+                "extend": extend_parser,
+                "trim": trim_parser,
+                "join": join_parser,
+                "filter": filter_parser,
+                "melt": melt_parser,
+                "pivot": pivot_parser,
+                "sort": sort_parser,
+            }
             op_parser = parsers[op_type]
             op_params = each_operation.copy()
-            op_params['args'] = op_args
-            each_operations = op_parser(op_params) # could have more than one Operation
+            op_params["args"] = op_args
+            each_operations = op_parser(op_params)  # could have more than one Operation
             _operations.extend(each_operations)
         return _operations
 
@@ -451,7 +458,7 @@ class xlParser():
         return len(self._operations)
 
     def __repr__(self):
-        return '\n'.join([str(e) for e in self._operations])
+        return "\n".join([str(e) for e in self._operations])
 
     def __call__(self, left, right=None):
         return self.parse(left, right)
@@ -461,7 +468,7 @@ class xlParser():
         df = left
         for i, each_op in enumerate(self._operations):
             print(i, each_op)
-            if each_op.op_type == 'unary':
+            if each_op.op_type == "unary":
                 df = each_op.parse(df)
             else:
                 df = each_op.parse(df, right)
@@ -472,8 +479,8 @@ class xlParser():
 
     def show_outputs(self, num_for_each=5):
         for i, (each, op) in enumerate(zip(self.output, self._operations)):
-            print('[index: %d][%s][%s]' % (i, op, op.name))
-            print(each.head(num_for_each), '\n\n')
+            print("[index: %d][%s][%s]" % (i, op, op.name))
+            print(each.head(num_for_each), "\n\n")
 
 
 #  class xlBinaryParser():

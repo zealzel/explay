@@ -13,10 +13,11 @@ home_filter_1 = "test/example_projects/filter/case1"
 
 home_yaml = "test/v2_example_projects/yaml/"
 home_2p = "test/v2_example_private/hr-bonus-2p/"
+home_4p = "test/v2_example_private/hr-bonus-4p/"
 
 
 if __name__ == "__main__":
-    home = home_2p
+    home = home_4p
     proj = "project"
     ee = ExPlay(home=home, proj_name=proj)
     ee.run_proj(to_excel=True)

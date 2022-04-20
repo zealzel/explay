@@ -402,10 +402,11 @@ class ExPlay:
             title = f"<h4>Merged input</h4>"
             html = title + build_table(input, "blue_light", font_size="10px")
             f.write(html)
-            for parser, df in zip(parser, parser.output):
-                details = json.dumps(dict(parser.params["args"]), ensure_ascii=False)
+            for each, df in zip(parser, parser.output):
+                print(each)
+                details = json.dumps(dict(each.params["args"]), ensure_ascii=False)
                 each_to_show = df[:show_rows_max]
-                title = f"<h4>{parser}</h4>"
+                title = f"<h4>{each}</h4>"
                 html = (
                     title
                     + details
