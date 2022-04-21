@@ -13,6 +13,9 @@ if __name__ == "__main__":
     """
     Usage:
         python app.py --home=/path/to/proj/dir --proj=project
+        or
+        exp --home=/path/to/proj/dir --proj=project
+            
     """
 
     parser = argparse.ArgumentParser()
