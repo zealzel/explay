@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="explay",
     packages=["explay"],
-    version="0.5.2",
+    version="0.5.3",
     description="make excel jobs playful again",
     author="zealzel",
     author_email="zealzel@gmail.com",
@@ -19,8 +19,8 @@ setup(
         "pretty_html_table",
     ],
     entry_points={
-        'console_scripts': [
-            'exp = app:main',
+        "console_scripts": [
+            "exp = explay:main",
         ],
     },
 )
