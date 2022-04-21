@@ -283,10 +283,10 @@ class ExPlay:
     def merge_all(
         self, conv_name, xlsx_dir=None, sheet_name=0, excludes=None, save=False
     ):
-
         source_path = self._get_abs_source_path(xlsx_dir)
         #  self.merger = xlMerger(self._conv, source_path)
         #  df_merged, file_names = self.merger.merge_all(conv_name, sheet_name, excludes)
+
 
 
         merger = xlMerger(self._conv, source_path)
