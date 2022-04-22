@@ -3,8 +3,8 @@ from setuptools import setup, find_packages
 setup(
     name="explay",
     packages=["explay"],
-    version="0.6.0",
-    description="make excel jobs playful again",
+    version="0.6.1",
+    description="Make excel jobs playful again",
     author="zealzel",
     author_email="zealzel@gmail.com",
     url="https://github.com/zealzel/explay",

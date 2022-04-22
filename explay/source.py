@@ -113,8 +113,8 @@ class xlRenderer:
         for row in ws.rows:
             max_contents_len = []
             for cell in row:
-                if not hasattr(cell, 'col_idx'):
-                    continue 
+                if not hasattr(cell, "col_idx"):
+                    continue
                 r_idx, c_idx = cell.row, cell.col_idx
 
                 max_content_len = len(str(get_cell(ws, r_idx, c_idx)))
@@ -183,8 +183,8 @@ class ExPlay:
 
         # initialize converters
         self.converters = {}
-        for k,v in self._conv.items():
-            v.update({'name': k})
+        for k, v in self._conv.items():
+            v.update({"name": k})
             self.converters[k] = xlConverter(v)
 
         # initialize parsers
@@ -198,9 +198,7 @@ class ExPlay:
         self._renderer = xlRenderer(self.home, self._rend) if self._rend else None
         self._template = xlTemplate(self._out) if self._out else None
         if self._proj:
-            self._project = yaml.dump(
-                self._proj, indent=True, default_flow_style=False
-            )
+            self._project = yaml.dump(self._proj, indent=True, default_flow_style=False)
         else:
             self._project = None
 
@@ -261,7 +259,7 @@ class ExPlay:
         return merger
 
     def merge_files(self, conv_name, locations, sheet_name=0, save=False):
-        print('merge_files')
+        print("merge_files")
         absfilepaths = []
         for each in locations:
             if os.path.isabs(each):
@@ -287,8 +285,6 @@ class ExPlay:
         source_path = self._get_abs_source_path(xlsx_dir)
         #  self.merger = xlMerger(self._conv, source_path)
         #  df_merged, file_names = self.merger.merge_all(conv_name, sheet_name, excludes)
-
-
 
         merger = xlMerger(self._conv, source_path)
         df_merged, file_names = merger.merge_all(conv_name, sheet_name, excludes)
@@ -324,15 +320,21 @@ class ExPlay:
                     if os.path.isabs(each):
                         absfilepaths.append(each)
                     else:
-                        absfilepaths.append(os.path.join(os.path.abspath(self.home), each))
-                merger = xlMerger(merger_name, conv_params, merg_params, source_path=self.home)
+                        absfilepaths.append(
+                            os.path.join(os.path.abspath(self.home), each)
+                        )
+                merger = xlMerger(
+                    merger_name, conv_params, merg_params, source_path=self.home
+                )
                 df_merged = merger.merge_files(conv_name, absfilepaths, sheet_name)
 
             elif merge_type == "merge_sheets":
                 xlsx_path = each_merger["xlsx_path"]
                 xlsx_dir = self._get_abs_source_path(xlsx_path)
-                sheet_names = each_merger['sheet_names']
-                merger = xlMerger(merger_name, conv_params, merg_params, source_path=xlsx_dir)
+                sheet_names = each_merger["sheet_names"]
+                merger = xlMerger(
+                    merger_name, conv_params, merg_params, source_path=xlsx_dir
+                )
                 df_merged = merger.merge_sheets(conv_name, xlsx_dir, sheet_names)
 
             elif merge_type == "merge_all":
@@ -348,8 +350,8 @@ class ExPlay:
         return merged
 
     def _run(self, each_proj):
-        input_name = each_proj['input']
-        parser = self.parsers[each_proj['parser']]
+        input_name = each_proj["input"]
+        parser = self.parsers[each_proj["parser"]]
         df_input = self.inputs[input_name]
         result = parser(df_input)
         return result
@@ -376,7 +378,7 @@ class ExPlay:
 
     def _to_excel(self):
         if not self._renderer:
-            print('no renderer found.')
+            print("no renderer found.")
             return
         for proj_name, each_result in self.results.items():
             self._renderer.to_excel(each_result, "out_{}.xlsx".format(proj_name))
@@ -389,6 +391,13 @@ class ExPlay:
             path = e["path"]
             self._renderer.render_excel(proj_result, path, template_name, template_dir)
 
+    def export_merged(self):
+        out_xlsx = "merged.xlsx"
+        writer = pd.ExcelWriter(out_xlsx, engine="xlsxwriter")
+        for name, merger in self.mergers.items():
+            merger.output.to_excel(writer, index=None, sheet_name=name)
+        writer.save()
+
     def export_inputs(self):
         inputs = self._df_inputs()
         for input_name, each_df in inputs.items():
@@ -398,10 +407,10 @@ class ExPlay:
         for k, each_parser in self.parsers.items():
             setattr(__main__, each_parser.name, each_parser)
 
-    def export_html(self, projname, html_name='out', show_rows_max = 10):
+    def export_html(self, projname, html_name="out", show_rows_max=10):
         proj = self._proj[projname]
-        input = self.inputs[proj['input']]
-        parser = self.parsers[proj['parser']]
+        input = self.inputs[proj["input"]]
+        parser = self.parsers[proj["parser"]]
         with open(f"{html_name}.html", "w") as f:
             title = f"<h4>Merged input</h4>"
             html = title + build_table(input, "blue_light", font_size="10px")
