@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="explay",
     packages=["explay"],
-    version="0.5.6.4",
+    version="0.6.0",
     description="make excel jobs playful again",
     author="zealzel",
     author_email="zealzel@gmail.com",
