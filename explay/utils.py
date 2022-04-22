@@ -5,7 +5,7 @@ import random
 import hashlib
 import importlib
 import threading
-from pathlib import Path
+from contextlib import suppress
 from collections import defaultdict
 import yaml
 
@@ -50,41 +50,58 @@ def register_custom_func(name, func):
 
 
 def register_func(workdir):
+
+    exe_location = os.path.dirname(shutil.which("pip"))
+    # The location of pip is the same as the executable
+    # Find the location of pip first
+    if not exe_location:
+        print("Please install pip first.")
+        return
+
     cwd = os.getcwd()
-    #  print("cwd", cwd)
-    #  print("workdir", workdir)
+    print("cwd", cwd)
+    print("workdir", workdir)
 
     func_temp_name = "func_temp"
     func_temp_py = f"{func_temp_name}.py"
     path1 = resource_path(func_temp_py)
     path2 = resource_path(func_temp_py, cwd)
+    path3 = os.path.join(exe_location, func_temp_py)
 
-    #  print("func_temp_name", func_temp_name)
-    #  print("func_temp_py", func_temp_py)
-    #  print("path1", path1)
-    #  print("path2", path2)
+    print("__file__", __file__)
+    print("func_temp_name", func_temp_name)
+    print("func_temp_py", func_temp_py)
+    print("path1", path1)
+    print("path2", path2)
+    print("path3", path3)
+    print("exe_location", exe_location)
 
     if not os.path.isfile(os.path.join(workdir, "func.py")):
         return
 
-    #  shutil.copy(os.path.join(workdir, "func.py"), os.path.join(cwd, func_temp_py))
     shutil.copy(os.path.join(workdir, "func.py"), path1)
     shutil.copy(os.path.join(workdir, "func.py"), path2)
+    shutil.copy(os.path.join(workdir, "func.py"), path3)
     if func_temp_name in sys.modules:
         del sys.modules[func_temp_name]
 
-    #  print("__file__", __file__)
-    import func_temp
+    print("sys.path", sys.path)
+    sys.path.append(exe_location)
+    func_module = importlib.import_module("func_temp")
+    print(func_module)
 
-    funcs = [f for f in dir(func_temp) if f.startswith("exp")]
+    print("dir", dir(func_module))
+    funcs = [f for f in dir(func_module) if f.startswith("exp")]
+    print("\nRegister customed functions defined in func.py")
     for func_name in funcs:
         print(f"func {func_name} registered.")
         func_name_in_yml = func_name[4:]
-        register_custom_func(func_name_in_yml, getattr(func_temp, func_name))
+        register_custom_func(func_name_in_yml, getattr(func_module, func_name))
 
-    #  os.chdir(cwd)
-    Path(path1).unlink(missing_ok=True)
-    Path(path2).unlink(missing_ok=True)
+    with suppress(FileNotFoundError):
+        os.remove(path1)
+        os.remove(path2)
+        os.remove(path3)
 
 
 def pd_set_option(max_colwidth, max_columns, precision=1):

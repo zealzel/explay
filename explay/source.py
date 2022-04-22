@@ -172,7 +172,8 @@ class ExPlay:
     def _parse_yml(self, proj_name):
         yml_file = os.path.join(self.home, f"{proj_name}.yml")
 
-        each = yaml.load(open(yml_file, "r"), yaml.Loader)
+        #  each = yaml.load(open(yml_file, "r"), yaml.Loader)
+        each = yaml.load(open(yml_file, "rb"), yaml.Loader)
         self._proj = each.get("xlproject", None)
         self._conv = each.get("xlconverter", None)
         self._merg = each.get("xlmerger", None)
